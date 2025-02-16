@@ -17,16 +17,23 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
-        working-directory: ./terraform  # Indique le dossier où se trouvent les fichiers Terraform
+        working-directory: ./terraform
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
-        working-directory: ./terraform  # Indique le dossier où se trouvent les fichiers Terraform
+        working-directory: ./terraform
         env:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
           ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+
+      - name: Install Ansible and winrm
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
+          pip3 install ansible
+          pip3 install pywinrm
 
       - name: Run Ansible
         run: |

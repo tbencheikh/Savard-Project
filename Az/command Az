@@ -1,0 +1,2 @@
+//créer le principal de service
+az ad sp create-for-rbac --name "terraform-sp" --role="Contributor" --scopes="/subscriptions/xxxxxxxxxx"
