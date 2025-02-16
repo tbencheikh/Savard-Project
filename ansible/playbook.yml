@@ -1,14 +1,39 @@
+---
 - hosts: windows
   gather_facts: no
-  tasks:
-    - name: Installer le rôle AD DS
-      win_feature:
-        name: AD-Domain-Services
-        include_management_tools: yes
-        state: present
-
-    - name: Promouvoir le serveur en contrôleur de domaine
-      win_domain_controller:
-        dns_domain_name: savard.local
-        safe_mode_password: "{{ admin_password }}"
-        state: present
+  vars:
+    admin_password: "P@ssw0rd123!"
+    domain_name: "savard.local"
+    departments:
+      - name: "Ventes et Marketing"
+        users:
+          - username: "ventes1"
+            password: "P@ssw0rd123!"
+          - username: "ventes2"
+            password: "P@ssw0rd123!"
+      - name: "Recherche et Développement"
+        users:
+          - username: "recherche1"
+            password: "P@ssw0rd123!"
+          - username: "recherche2"
+            password: "P@ssw0rd123!"
+      - name: "Finances"
+        users:
+          - username: "finances1"
+            password: "P@ssw0rd123!"
+          - username: "finances2"
+            password: "P@ssw0rd123!"
+      - name: "Technologies de l'information"
+        users:
+          - username: "ti1"
+            password: "P@ssw0rd123!"
+          - username: "ti2"
+            password: "P@ssw0rd123!"
+      - name: "Sondages"
+        users:
+          - username: "sondages1"
+            password: "P@ssw0rd123!"
+          - username: "sondages2"
+            password: "P@ssw0rd123!"
+  roles:
+    - ad

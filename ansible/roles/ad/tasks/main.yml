@@ -1,0 +1,45 @@
+---
+- name: Installer le rôle AD DS
+  win_feature:
+    name: AD-Domain-Services
+    include_management_tools: yes
+    state: present
+
+- name: Promouvoir le serveur en contrôleur de domaine
+  win_domain_controller:
+    dns_domain_name: "{{ domain_name }}"
+    safe_mode_password: "{{ admin_password }}"
+    state: present
+  notify: Redémarrer le serveur
+
+- name: Créer les unités d'organisation (OU)
+  win_ou:
+    name: "{{ item.name }}"
+    path: "DC={{ domain_name.split('.')[0] }},DC={{ domain_name.split('.')[1] }}"
+    state: present
+  loop: "{{ departments }}"
+
+- name: Créer les utilisateurs
+  win_user:
+    name: "{{ user.username }}"
+    password: "{{ user.password }}"
+    state: present
+    ou: "OU={{ item.name }},DC={{ domain_name.split('.')[0] }},DC={{ domain_name.split('.')[1] }}"
+  loop: "{{ departments }}"
+  with_items: "{{ item.users }}"
+
+- name: Créer les groupes
+  win_group:
+    name: "{{ item.name }}"
+    scope: global
+    category: security
+    state: present
+    ou: "OU={{ item.name }},DC={{ domain_name.split('.')[0] }},DC={{ domain_name.split('.')[1] }}"
+  loop: "{{ departments }}"
+
+- name: Ajouter les utilisateurs aux groupes
+  win_group_membership:
+    name: "{{ item.name }}"
+    members: "{{ item.users | map(attribute='username') | list }}"
+    state: present
+  loop: "{{ departments }}"

@@ -1,0 +1,8 @@
+---
+- name: Redémarrer le serveur
+  win_reboot:
+    msg: "Redémarrage du serveur après la promotion en contrôleur de domaine"
+    connect_timeout: 5
+    reboot_timeout: 600
+    pre_reboot_delay: 0
+    post_reboot_delay: 30
