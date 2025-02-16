@@ -28,12 +28,25 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
           ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
 
-      - name: Install Ansible and winrm
+      - name: Get Public IP
+        id: get_ip
+        run: |
+          cd terraform
+          PUBLIC_IP=$(terraform output -raw public_ip)
+          echo "Public IP: $PUBLIC_IP"
+          echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
+
+      - name: Update Ansible Inventory
+        run: |
+          cd ansible
+          sed -i "s/ansible_host=.*/ansible_host=$PUBLIC_IP/" inventory
+
+      - name: Install Ansible and required collections
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-pip
           pip3 install ansible
-          pip3 install pywinrm
+          ansible-galaxy collection install community.windows
 
       - name: Run Ansible
         run: |

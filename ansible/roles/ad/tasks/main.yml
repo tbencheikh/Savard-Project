@@ -6,14 +6,14 @@
     state: present
 
 - name: Promouvoir le serveur en contrôleur de domaine
-  win_domain_controller:
+  community.windows.win_domain_controller:
     dns_domain_name: "{{ domain_name }}"
     safe_mode_password: "{{ admin_password }}"
     state: present
   notify: Redémarrer le serveur
 
 - name: Créer les unités d'organisation (OU)
-  win_ou:
+  community.windows.win_domain_ou:
     name: "{{ item.name }}"
     path: "DC={{ domain_name.split('.')[0] }},DC={{ domain_name.split('.')[1] }}"
     state: present
