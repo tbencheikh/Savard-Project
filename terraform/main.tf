@@ -21,15 +21,14 @@ resource "azurerm_subnet" "subnet" {
   address_prefixes     = ["10.0.1.0/24"]
 }
 
-# Ajouter une adresse IP publique
 resource "azurerm_public_ip" "public_ip" {
   name                = "savard-public-ip"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  allocation_method   = "Dynamic"
+  allocation_method   = "Static"  # Allocation statique
+  sku                 = "Standard"  # SKU Standard
 }
 
-# Mettre à jour l'interface réseau pour utiliser l'adresse IP publique
 resource "azurerm_network_interface" "nic" {
   name                = "savard-nic"
   location            = azurerm_resource_group.rg.location
@@ -41,11 +40,6 @@ resource "azurerm_network_interface" "nic" {
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = azurerm_public_ip.public_ip.id  # Associer l'adresse IP publique
   }
-}
-
-# Ajouter une sortie pour l'adresse IP publique
-output "public_ip" {
-  value = azurerm_public_ip.public_ip.ip_address
 }
 
 resource "azurerm_windows_virtual_machine" "server" {
@@ -68,4 +62,8 @@ resource "azurerm_windows_virtual_machine" "server" {
     sku       = "2019-Datacenter"
     version   = "latest"
   }
+}
+
+output "public_ip" {
+  value = azurerm_public_ip.public_ip.ip_address
 }
