@@ -1,0 +1,14 @@
+- hosts: windows
+  gather_facts: no
+  tasks:
+    - name: Installer le rôle AD DS
+      win_feature:
+        name: AD-Domain-Services
+        include_management_tools: yes
+        state: present
+
+    - name: Promouvoir le serveur en contrôleur de domaine
+      win_domain_controller:
+        dns_domain_name: savard.local
+        safe_mode_password: "{{ admin_password }}"
+        state: present
