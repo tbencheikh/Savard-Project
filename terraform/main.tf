@@ -2,11 +2,19 @@ provider "azurerm" {
   features {}
 }
 
+# Groupe de ressources
 resource "azurerm_resource_group" "rg" {
   name     = "savard-rg"
-  location = "East US"
+  location = "eastus"
+
+  lifecycle {
+    ignore_changes = [
+      tags,  # Ignorer les modifications sur les tags
+    ]
+  }
 }
 
+# Réseau virtuel
 resource "azurerm_virtual_network" "vnet" {
   name                = "savard-vnet"
   address_space       = ["10.0.0.0/16"]
@@ -14,6 +22,7 @@ resource "azurerm_virtual_network" "vnet" {
   resource_group_name = azurerm_resource_group.rg.name
 }
 
+# Sous-réseau
 resource "azurerm_subnet" "subnet" {
   name                 = "savard-subnet"
   resource_group_name  = azurerm_resource_group.rg.name
@@ -21,6 +30,7 @@ resource "azurerm_subnet" "subnet" {
   address_prefixes     = ["10.0.1.0/24"]
 }
 
+# Interface réseau
 resource "azurerm_network_interface" "nic" {
   name                = "savard-nic"
   location            = azurerm_resource_group.rg.location
@@ -33,6 +43,7 @@ resource "azurerm_network_interface" "nic" {
   }
 }
 
+# Machine virtuelle Windows
 resource "azurerm_windows_virtual_machine" "server" {
   name                = "savard-server"
   resource_group_name = azurerm_resource_group.rg.name
