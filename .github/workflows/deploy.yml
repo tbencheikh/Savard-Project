@@ -38,7 +38,7 @@ jobs:
             exit 1
           fi
           echo "Public IP: $PUBLIC_IP"
-          echo "PUBLIC_IP=${PUBLIC_IP}" >> $GITHUB_ENV  # Stocke l'IP dans l'environnement pour une utilisation ultérieure
+          echo "::set-output name=public_ip::$PUBLIC_IP"  # Utiliser set-output pour définir la variable
         
 
       - name: Generate Ansible Inventory (YAML format)
@@ -47,7 +47,7 @@ jobs:
           all:
             hosts:
               savard-server:
-                ansible_host: "${{ env.PUBLIC_IP }}"
+                ansible_host: "${{ steps.get_ip.outputs.public_ip }}"
                 ansible_user: "adminuser"
                 ansible_password: "P@ssw0rd123!"
                 ansible_connection: "winrm"
