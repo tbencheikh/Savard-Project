@@ -38,7 +38,7 @@ jobs:
             exit 1
           fi
           echo "Public IP: $PUBLIC_IP"
-          echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV  # Stocke l'IP dans l'environnement pour une utilisation ultérieure
+          echo "PUBLIC_IP=${PUBLIC_IP}" >> $GITHUB_ENV  # Stocke l'IP dans l'environnement pour une utilisation ultérieure
         
 
       - name: Generate Ansible Inventory (YAML format)
