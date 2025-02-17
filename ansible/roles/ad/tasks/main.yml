@@ -1,9 +1,13 @@
 ---
 - name: Installer le rôle AD DS
-  community.windows.win_feature:
+  ansible.windows.win_feature:
     name: AD-Domain-Services
     include_management_tools: yes
     state: present
+
+- name: Vérifier la présence des modules Windows
+  run: |
+    ansible-doc -l | grep "win_"
 
 - name: Promouvoir le serveur en contrôleur de domaine
   community.windows.win_domain_controller:
