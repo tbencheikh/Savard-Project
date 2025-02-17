@@ -41,11 +41,21 @@ jobs:
         env:
           PUBLIC_IP: ${{ steps.get_ip.outputs.PUBLIC_IP }}
 
-      - name: Update Ansible Inventory
+      - name: Generate Ansible Inventory (YAML format)
         run: |
-          cd ansible
-          sed -i "s/ansible_host=.*/ansible_host=${{ env.PUBLIC_IP }}/" inventory
-          cat inventory
+          cat <<EOF > ansible/inventory.yml
+          all:
+            hosts:
+              savard-server:
+                ansible_host: "${{ env.PUBLIC_IP }}"
+                ansible_user: "adminuser"
+                ansible_password: "P@ssw0rd123!"
+                ansible_connection: "winrm"
+                ansible_winrm_transport: "basic"
+                ansible_winrm_scheme: "http"
+                ansible_winrm_port: 5985
+          EOF
+          cat ansible/inventory.yml
 
       - name: Install Ansible and required collections
         run: |
@@ -53,22 +63,16 @@ jobs:
           sudo apt-get install -y python3-pip
           pip3 install --upgrade pip
           pip3 install ansible
-          ansible-galaxy collection install microsoft.ad --force  # Mise à jour des collections
-          ansible-galaxy collection install community.windows --force  # Toujours nécessaire si tu utilises des modules legacy
-          ansible-galaxy collection install ansible.windows --force  # Pour les modules Windows classiques
-          echo "✅ Vérification des collections installées"
+          ansible-galaxy collection install community.windows --force  # Collection principale pour Windows
+          ansible-galaxy collection install ansible.windows --force  # Autre collection pour les modules Windows
+          echo "✅ Collections installées :"
           ansible-galaxy collection list
-          echo "✅ Vérification des modules Windows"
+          echo "✅ Vérification des modules Windows :"
           ansible-doc -l | grep "win_"
-          echo "✅ Vérification de l'installation Ansible"
+          echo "✅ Vérification de l'installation Ansible :"
           ansible --version
-          
-      - name: Vérifier la présence des modules Windows
-        run: |
-          ansible-doc -l | grep "win_"
-        
-      - name: Run Ansible
+
+      - name: Run Ansible Playbook
         run: |
           cd ansible
           ansible-playbook -i inventory.yml playbook.yml -vvv
-

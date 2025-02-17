@@ -5,7 +5,6 @@
     include_management_tools: yes
     state: present
 
-
 - name: Vérifier la présence des modules Windows
   ansible.builtin.command: ansible-doc -l
   register: ansible_modules_list
@@ -15,7 +14,7 @@
     msg: "{{ ansible_modules_list.stdout_lines | select('search', 'win_') | list }}"
 
 - name: Promouvoir le serveur en contrôleur de domaine
-  microsoft.ad.domain_controller:  # Module mis à jour pour promouvoir en contrôleur de domaine
+  ansible.windows.win_domain_controller:
     dns_domain_name: "{{ domain_name }}"
     safe_mode_password: "{{ admin_password }}"
     state: present
@@ -30,7 +29,7 @@
     post_reboot_delay: 30
 
 - name: Créer les unités d'organisation (OU)
-  microsoft.ad.win_domain_ou:  # Module mis à jour pour créer les OUs
+  ansible.windows.win_domain_ou:
     name: "{{ item.name }}"
     path: "DC={{ domain_name.split('.')[0] }},DC={{ domain_name.split('.')[1] }}"
     state: present
@@ -63,3 +62,41 @@
   loop: "{{ departments | subelements('users') }}"
   loop_control:
     label: "{{ item.1.username }}"
+
+# Configuration des GPOs
+- name: Configurer les GPOs - Stratégies de mot de passe
+  community.windows.win_group_policy:
+    name: "Password Policy"
+    path: "DC={{ domain_name.split('.')[0] }},DC={{ domain_name.split('.')[1] }}"
+    setting: 
+      MinimumPasswordLength: 12
+      MaximumPasswordAge: 90
+      PasswordHistorySize: 24
+      LockoutBadCount: 5
+      ResetLockoutCount: 30
+      LockoutDuration: 30
+    state: present
+
+# Création des répertoires partagés et configuration des permissions ACL
+- name: Créer les dossiers partagés pour chaque département
+  ansible.windows.win_file:
+    path: "C:\\Shares\\{{ item.name }}"
+    state: directory
+  loop: "{{ departments }}"
+
+- name: Configurer les permissions ACL pour les dossiers partagés
+  ansible.windows.win_acl:
+    path: "C:\\Shares\\{{ item.name }}"
+    user: "{{ item.name }}"  # Le groupe du département
+    rights: FullControl
+    state: present
+  loop: "{{ departments }}"
+
+- name: Partager les dossiers des départements
+  ansible.windows.win_share:
+    name: "{{ item.name }}"
+    path: "C:\\Shares\\{{ item.name }}"
+    description: "Partage pour le département {{ item.name }}"
+    full: "{{ item.name }}"
+    state: present
+  loop: "{{ departments }}"
