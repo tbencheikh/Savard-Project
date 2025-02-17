@@ -29,11 +29,15 @@ jobs:
           ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
           ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
 
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: ./terraform
+
       - name: Run Import Script
         run: |
           chmod +x import_all_resources.sh
           ./import_all_resources.sh
-        working-directory: ./terraform  # Spécifier le répertoire de travail
+        working-directory: ./terraform
         env:
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
@@ -41,22 +45,12 @@ jobs:
           ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
 
       - name: Terraform Plan
-        run: terraform plan
+        run: terraform plan -no-color -input=false -out=tfplan
         working-directory: ./terraform
-        env:
-          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve tfplan
         working-directory: ./terraform
-        env:
-          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
 
       - name: Get Public IP
         id: get_ip
@@ -64,27 +58,33 @@ jobs:
           cd terraform
           PUBLIC_IP=$(terraform output -raw public_ip | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b")
           if [[ -z "$PUBLIC_IP" ]]; then
-            echo "Error: No valid IP address found in Terraform output."
-            exit 1
+            echo "⚠️ Avertissement : Aucune adresse IP publique trouvée dans la sortie Terraform."
+            echo "::set-output name=public_ip::none"
+          else
+            echo "Public IP: $PUBLIC_IP"
+            echo "::set-output name=public_ip::$PUBLIC_IP"
           fi
-          echo "Public IP: $PUBLIC_IP"
-          echo "::set-output name=public_ip::$PUBLIC_IP"
 
       - name: Generate Ansible Inventory (YAML format)
         run: |
-          cat <<EOF > ansible/inventory.yml
-          all:
-            hosts:
-              savard-server:
-                ansible_host: "${{ steps.get_ip.outputs.public_ip }}"
-                ansible_user: "adminuser"
-                ansible_password: "P@ssw0rd123!"
-                ansible_connection: "winrm"
-                ansible_winrm_transport: "basic"
-                ansible_winrm_scheme: "http"
-                ansible_winrm_port: 5985
-          EOF
-          cat ansible/inventory.yml
+          if [[ "${{ steps.get_ip.outputs.public_ip }}" == "none" ]]; then
+            echo "❌ Erreur : Aucune adresse IP publique disponible pour générer l'inventaire Ansible."
+            exit 1
+          else
+            cat <<EOF > ansible/inventory.yml
+            all:
+              hosts:
+                savard-server:
+                  ansible_host: "${{ steps.get_ip.outputs.public_ip }}"
+                  ansible_user: "adminuser"
+                  ansible_password: "${{ secrets.ANSIBLE_PASSWORD }}"
+                  ansible_connection: "winrm"
+                  ansible_winrm_transport: "basic"
+                  ansible_winrm_scheme: "http"
+                  ansible_winrm_port: 5985
+            EOF
+            cat ansible/inventory.yml
+          fi
 
       - name: Vérifier le contenu de l'inventaire Ansible
         run: cat ansible/inventory.yml
@@ -117,3 +117,8 @@ jobs:
         run: |
           cd ansible
           ansible-playbook -i inventory.yml playbook.yml -vvv
+
+      - name: Cleanup on Failure
+        if: failure()
+        run: terraform destroy -auto-approve
+        working-directory: ./terraform
