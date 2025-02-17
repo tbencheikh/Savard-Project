@@ -19,6 +19,15 @@ jobs:
         run: terraform init
         working-directory: ./terraform
 
+      - name: Terraform Plan
+        run: terraform plan
+        working-directory: ./terraform
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+
       - name: Terraform Apply
         run: terraform apply -auto-approve
         working-directory: ./terraform
@@ -39,7 +48,6 @@ jobs:
           fi
           echo "Public IP: $PUBLIC_IP"
           echo "::set-output name=public_ip::$PUBLIC_IP"  # Utiliser set-output pour définir la variable
-        
 
       - name: Generate Ansible Inventory (YAML format)
         run: |
@@ -56,11 +64,10 @@ jobs:
                 ansible_winrm_port: 5985
           EOF
           cat ansible/inventory.yml
-        
-      
+
       - name: Vérifier le contenu de l'inventaire Ansible
         run: cat ansible/inventory.yml
-  
+
       - name: Install Ansible and required collections
         run: |
           sudo apt-get update

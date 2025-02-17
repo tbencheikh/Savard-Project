@@ -29,6 +29,24 @@ resource "azurerm_public_ip" "public_ip" {
   sku                 = "Standard"  # SKU Standard
 }
 
+resource "azurerm_network_security_group" "winrm_nsg" {
+  name                = "winrm-nsg"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  security_rule {
+    name                       = "Allow-WinRM"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "TCP"
+    source_port_range          = "*"
+    destination_port_range     = "5985"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
+
 resource "azurerm_network_interface" "nic" {
   name                = "savard-nic"
   location            = azurerm_resource_group.rg.location
@@ -38,8 +56,10 @@ resource "azurerm_network_interface" "nic" {
     name                          = "internal"
     subnet_id                     = azurerm_subnet.subnet.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.public_ip.id  # Associer l'adresse IP publique
+    public_ip_address_id          = azurerm_public_ip.public_ip.id
   }
+
+  network_security_group_id = azurerm_network_security_group.winrm_nsg.id  # Associer le NSG
 }
 
 resource "azurerm_windows_virtual_machine" "server" {
@@ -62,6 +82,20 @@ resource "azurerm_windows_virtual_machine" "server" {
     sku       = "2019-Datacenter"
     version   = "latest"
   }
+}
+
+resource "azurerm_virtual_machine_extension" "winrm_extension" {
+  name                 = "enable-winrm"
+  virtual_machine_id   = azurerm_windows_virtual_machine.server.id
+  publisher             = "Microsoft.Compute"
+  type                  = "CustomScriptExtension"
+  type_handler_version = "1.10"
+
+  settings = <<SETTINGS
+    {
+      "scriptFile": "./scripts/enable-winrm.ps1"
+    }
+SETTINGS
 }
 
 output "public_ip" {
