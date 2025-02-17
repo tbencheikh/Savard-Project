@@ -38,13 +38,13 @@ jobs:
             exit 1
           fi
           echo "Public IP: $PUBLIC_IP"
-        env:
-          PUBLIC_IP: ${{ steps.get_ip.outputs.PUBLIC_IP }}
+          echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
 
       - name: Update Ansible Inventory
         run: |
           cd ansible
           sed -i "s/ansible_host=.*/ansible_host=${{ env.PUBLIC_IP }}/" inventory
+          cat inventory
 
       - name: Install Ansible and required collections
         run: |
@@ -52,16 +52,12 @@ jobs:
           sudo apt-get install -y python3-pip
           pip3 install ansible
           ansible-galaxy collection install community.windows --force
-
-      - name: Vérifier la version de community.windows
-        run: ansible-galaxy collection list community.windows
-
-      - name: Vérifier les modules disponibles dans community.windows
-        run: ansible-doc -l | grep "win_"
-
-      - name: Tester l'importation du module win_domain_controller
-        run: |
-          ansible -m community.windows.win_domain_controller -a "state=present" -i "localhost," --connection=local
+          echo "Vérification des collections installées"
+          ansible-galaxy collection list
+          echo "Vérification des modules Windows"
+          ansible-doc -l | grep "win_"
+          echo "Vérification de l'installation Ansible"
+          ansible --version
 
       - name: Run Ansible
         run: |
