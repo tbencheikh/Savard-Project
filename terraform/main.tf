@@ -25,8 +25,8 @@ resource "azurerm_public_ip" "public_ip" {
   name                = "savard-public-ip"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  allocation_method   = "Static"  # Allocation statique
-  sku                 = "Standard"  # SKU Standard
+  allocation_method   = "Static"
+  sku                 = "Standard"
 }
 
 resource "azurerm_network_security_group" "winrm_nsg" {
@@ -39,7 +39,7 @@ resource "azurerm_network_security_group" "winrm_nsg" {
     priority                   = 100
     direction                  = "Inbound"
     access                     = "Allow"
-    protocol                   = "Tcp"  # Utilisez "Tcp" au lieu de "TCP"
+    protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "5985"
     source_address_prefix      = "*"
