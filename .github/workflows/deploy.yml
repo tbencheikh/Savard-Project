@@ -15,6 +15,33 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
+      - name: Set up Azure CLI
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Check if Resource Group exists
+        id: check_rg
+        run: |
+          RG_NAME="savard-rg"
+          RG_EXISTS=$(az group exists --name $RG_NAME)
+          if [ "$RG_EXISTS" == "true" ]; then
+            echo "Resource Group $RG_NAME already exists."
+            echo "::set-output name=rg_exists::true"
+          else
+            echo "Resource Group $RG_NAME does not exist."
+            echo "::set-output name=rg_exists::false"
+          fi
+        shell: bash
+
+      - name: Import existing Resource Group if it exists
+        if: steps.check_rg.outputs.rg_exists == 'true'
+        run: |
+          RG_NAME="savard-rg"
+          SUBSCRIPTION_ID=${{ secrets.ARM_SUBSCRIPTION_ID }}
+          terraform import azurerm_resource_group.rg /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RG_NAME
+        working-directory: ./terraform
+
       - name: Terraform Init
         run: terraform init
         working-directory: ./terraform
@@ -47,7 +74,7 @@ jobs:
             exit 1
           fi
           echo "Public IP: $PUBLIC_IP"
-          echo "::set-output name=public_ip::$PUBLIC_IP"  # Utiliser set-output pour définir la variable
+          echo "::set-output name=public_ip::$PUBLIC_IP"
 
       - name: Generate Ansible Inventory (YAML format)
         run: |
