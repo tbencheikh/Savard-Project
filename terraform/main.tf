@@ -39,7 +39,7 @@ resource "azurerm_network_security_group" "winrm_nsg" {
     priority                   = 100
     direction                  = "Inbound"
     access                     = "Allow"
-    protocol                   = "TCP"
+    protocol                   = "Tcp"  # Utilisez "Tcp" au lieu de "TCP"
     source_port_range          = "*"
     destination_port_range     = "5985"
     source_address_prefix      = "*"
@@ -58,8 +58,11 @@ resource "azurerm_network_interface" "nic" {
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = azurerm_public_ip.public_ip.id
   }
+}
 
-  network_security_group_id = azurerm_network_security_group.winrm_nsg.id  # Associer le NSG
+resource "azurerm_network_interface_security_group_association" "example" {
+  network_interface_id      = azurerm_network_interface.nic.id
+  network_security_group_id = azurerm_network_security_group.winrm_nsg.id
 }
 
 resource "azurerm_windows_virtual_machine" "server" {
@@ -87,13 +90,13 @@ resource "azurerm_windows_virtual_machine" "server" {
 resource "azurerm_virtual_machine_extension" "winrm_extension" {
   name                 = "enable-winrm"
   virtual_machine_id   = azurerm_windows_virtual_machine.server.id
-  publisher             = "Microsoft.Compute"
-  type                  = "CustomScriptExtension"
+  publisher            = "Microsoft.Compute"
+  type                 = "CustomScriptExtension"
   type_handler_version = "1.10"
 
   settings = <<SETTINGS
     {
-      "scriptFile": "./scripts/enable-winrm.ps1"
+      "commandToExecute": "powershell -ExecutionPolicy Unrestricted -Command Enable-PSRemoting -Force; Set-Item WSMan:\\localhost\\Client\\AllowUnencrypted $true; Set-Item WSMan:\\localhost\\Server\\Auth\\Basic $true; New-NetFirewallRule -DisplayName 'Allow WINRM' -Direction Inbound -Protocol TCP -Action Allow -LocalPort 5985"
     }
 SETTINGS
 }
