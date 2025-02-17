@@ -13,7 +13,7 @@ import_resource() {
   echo "Vérification de l'existence de la ressource $RESOURCE_NAME de type $RESOURCE_TYPE..."
   if az resource show --ids $AZURE_ID &> /dev/null; then
     echo "La ressource existe. Importation dans Terraform..."
-    terraform import $RESOURCE_TYPE.$RESOURCE_NAME $AZURE_ID
+    terraform import "$RESOURCE_TYPE.$RESOURCE_NAME" "$AZURE_ID"
     if [ $? -ne 0 ]; then
       echo "❌ Erreur lors de l'importation de la ressource $RESOURCE_NAME."
       exit 1
@@ -39,6 +39,6 @@ RESOURCES=(
 for RESOURCE in "${RESOURCES[@]}"; do
   RESOURCE_TYPE=$(echo $RESOURCE | awk '{print $1}')
   AZURE_ID=$(echo $RESOURCE | awk '{print $2}')
-  RESOURCE_NAME=$(echo $RESOURCE_TYPE | awk -F'.' '{print $NF}')  # Extraction du nom de la ressource
-  import_resource $RESOURCE_TYPE $RESOURCE_NAME $AZURE_ID
+  RESOURCE_NAME=$(echo $RESOURCE_TYPE | awk -F'.' '{print $2}')  # Extraction du nom de la ressource
+  import_resource "$RESOURCE_TYPE" "$RESOURCE_NAME" "$AZURE_ID"
 done
