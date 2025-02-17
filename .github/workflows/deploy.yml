@@ -51,7 +51,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y python3-pip
           pip3 install ansible
-          ansible-galaxy collection install community.windows
+          ansible-galaxy collection install community.windows --force
+
+      - name: Vérifier la version de community.windows
+        run: ansible-galaxy collection list community.windows
+
+      - name: Vérifier les modules disponibles dans community.windows
+        run: ansible-doc -l | grep "win_"
+
+      - name: Tester l'importation du module win_domain_controller
+        run: |
+          ansible -m community.windows.win_domain_controller -a "state=present" -i "localhost," --connection=local
 
       - name: Run Ansible
         run: |
