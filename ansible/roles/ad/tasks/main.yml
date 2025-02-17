@@ -1,6 +1,6 @@
 ---
 - name: Installer le rôle AD DS
-  win_feature:
+  community.windows.win_feature:
     name: AD-Domain-Services
     include_management_tools: yes
     state: present
@@ -12,6 +12,9 @@
     state: present
   notify: Redémarrer le serveur
 
+- name: Attendre que le serveur redémarre après la promotion
+  ansible.windows.win_reboot:
+
 - name: Créer les unités d'organisation (OU)
   community.windows.win_domain_ou:
     name: "{{ item.name }}"
@@ -20,26 +23,29 @@
   loop: "{{ departments }}"
 
 - name: Créer les utilisateurs
-  win_user:
-    name: "{{ user.username }}"
-    password: "{{ user.password }}"
+  ansible.windows.win_user:
+    name: "{{ item.1.username }}"
+    password: "{{ item.1.password }}"
     state: present
-    ou: "OU={{ item.name }},DC={{ domain_name.split('.')[0] }},DC={{ domain_name.split('.')[1] }}"
-  loop: "{{ departments }}"
-  with_items: "{{ item.users }}"
+    path: "OU={{ item.0.name }},DC={{ domain_name.split('.')[0] }},DC={{ domain_name.split('.')[1] }}"
+  loop: "{{ departments | subelements('users') }}"
+  loop_control:
+    label: "{{ item.1.username }}"
 
 - name: Créer les groupes
-  win_group:
+  ansible.windows.win_group:
     name: "{{ item.name }}"
     scope: global
     category: security
     state: present
-    ou: "OU={{ item.name }},DC={{ domain_name.split('.')[0] }},DC={{ domain_name.split('.')[1] }}"
+    path: "OU={{ item.name }},DC={{ domain_name.split('.')[0] }},DC={{ domain_name.split('.')[1] }}"
   loop: "{{ departments }}"
 
 - name: Ajouter les utilisateurs aux groupes
-  win_group_membership:
-    name: "{{ item.name }}"
-    members: "{{ item.users | map(attribute='username') | list }}"
+  ansible.windows.win_group_membership:
+    name: "{{ item.0.name }}"
+    members: "{{ item.1.username }}"
     state: present
-  loop: "{{ departments }}"
+  loop: "{{ departments | subelements('users') }}"
+  loop_control:
+    label: "{{ item.1.username }}"

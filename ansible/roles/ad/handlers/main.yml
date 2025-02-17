@@ -1,6 +1,6 @@
 ---
 - name: Redémarrer le serveur
-  win_reboot:
+  ansible.windows.win_reboot:
     msg: "Redémarrage du serveur après la promotion en contrôleur de domaine"
     connect_timeout: 5
     reboot_timeout: 600

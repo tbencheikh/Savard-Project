@@ -55,11 +55,11 @@ jobs:
           pip3 install ansible
           ansible-galaxy collection install community.windows --force
           ansible-galaxy collection install ansible.windows --force
-          echo "Vérification des collections installées"
+          echo "✅ Vérification des collections installées"
           ansible-galaxy collection list
-          echo "Vérification des modules Windows"
+          echo "✅ Vérification des modules Windows"
           ansible-doc -l | grep "win_"
-          echo "Vérification de l'installation Ansible"
+          echo "✅ Vérification de l'installation Ansible"
           ansible --version
 
       - name: Run Ansible

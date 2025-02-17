@@ -35,5 +35,6 @@
             password: "P@ssw0rd123!"
           - username: "sondages2"
             password: "P@ssw0rd123!"
+    users: "{{ departments | subelements('users') }}"  # Génère la liste complète des utilisateurs
   roles:
     - ad
