@@ -20,20 +20,6 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Check if Resource Group exists
-        id: check_rg
-        run: |
-          RG_NAME="savard-rg"
-          RG_EXISTS=$(az group exists --name $RG_NAME)
-          if [ "$RG_EXISTS" == "true" ]; then
-            echo "Resource Group $RG_NAME already exists."
-            echo "::set-output name=rg_exists::true"
-          else
-            echo "Resource Group $RG_NAME does not exist."
-            echo "::set-output name=rg_exists::false"
-          fi
-        shell: bash
-
       - name: Terraform Init
         run: terraform init
         working-directory: ./terraform
@@ -43,36 +29,10 @@ jobs:
           ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
           ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
 
-      - name: Import existing Resource Group if it exists
-        if: steps.check_rg.outputs.rg_exists == 'true'
+      - name: Run Import Script
         run: |
-          RG_NAME="savard-rg"
-          SUBSCRIPTION_ID=${{ secrets.ARM_SUBSCRIPTION_ID }}
-          terraform import azurerm_resource_group.rg /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RG_NAME
-        working-directory: ./terraform
-        env:
-          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-
-      - name: Import existing Virtual Network if it exists
-        run: |
-          VNET_NAME="savard-vnet"
-          SUBSCRIPTION_ID=${{ secrets.ARM_SUBSCRIPTION_ID }}
-          terraform import azurerm_virtual_network.vnet /subscriptions/$SUBSCRIPTION_ID/resourceGroups/savard-rg/providers/Microsoft.Network/virtualNetworks/$VNET_NAME
-        working-directory: ./terraform
-        env:
-          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-
-      - name: Import existing Public IP if it exists
-        run: |
-          PUBLIC_IP_NAME="savard-public-ip"
-          SUBSCRIPTION_ID=${{ secrets.ARM_SUBSCRIPTION_ID }}
-          terraform import azurerm_public_ip.public_ip /subscriptions/$SUBSCRIPTION_ID/resourceGroups/savard-rg/providers/Microsoft.Network/publicIPAddresses/$PUBLIC_IP_NAME
+          chmod +x ./terraform/import_all_resources.sh
+          ./terraform/import_all_resources.sh
         working-directory: ./terraform
         env:
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
