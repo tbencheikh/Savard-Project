@@ -70,4 +70,5 @@ jobs:
       - name: Run Ansible
         run: |
           cd ansible
-          ansible-playbook -i inventory playbook.yml -vvv
+          ansible-playbook -i inventory.yml playbook.yml -vvv
+
