@@ -1,0 +1,10 @@
+all:
+  hosts:
+    savard-server:
+      ansible_host: "<IP_PUBLIQUE_DU_SERVEUR>"
+      ansible_user: "adminuser"
+      ansible_password: "P@ssw0rd123!"
+      ansible_connection: "winrm"
+      ansible_winrm_transport: "basic"
+      ansible_winrm_scheme: "http"
+      ansible_winrm_port: 5985

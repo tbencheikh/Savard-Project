@@ -1,9 +1,10 @@
 ---
 - name: Installer le rôle AD DS
-  microsoft.ad.win_feature:  # Utilisation du module de remplacement
+  ansible.windows.win_feature:
     name: AD-Domain-Services
     include_management_tools: yes
     state: present
+
 
 - name: Vérifier la présence des modules Windows
   ansible.builtin.command: ansible-doc -l
