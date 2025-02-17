@@ -1,9 +1,10 @@
 ---
-- name: Installer le rôle AD DS
+- name: Installer le rôle DNS Server
   ansible.windows.win_feature:
-    name: AD-Domain-Services
+    name: DNS
     include_management_tools: yes
     state: present
+
 
 - name: Vérifier la présence des modules Windows
   ansible.builtin.command: ansible-doc -l
@@ -14,11 +15,12 @@
     msg: "{{ ansible_modules_list.stdout_lines | select('search', 'win_') | list }}"
 
 - name: Promouvoir le serveur en contrôleur de domaine
-  microsoft.ad.domain_controller:
-    dns_domain_name: "{{ domain_name }}"
+  ansible.windows.win_domain_controller:
+    domain_name: "{{ domain_name }}"
     safe_mode_password: "{{ admin_password }}"
-    state: present
+    state: domain_controller
   notify: Redémarrer le serveur
+
 
 - name: Attendre que le serveur redémarre après la promotion
   ansible.windows.win_reboot:
@@ -31,7 +33,7 @@
 - name: Créer les unités d'organisation (OU)
   microsoft.ad.ou:
     name: "{{ item.name }}"
-    path: "DC={{ domain_name.split('.')[0] }},DC={{ domain_name.split('.')[1] }}"
+    path: "DC={{ domain_name | replace('.', ',DC=') }}"
     state: present
   loop: "{{ departments }}"
 
@@ -40,7 +42,7 @@
     name: "{{ item.1.username }}"
     password: "{{ item.1.password }}"
     state: present
-    path: "OU={{ item.0.name }},DC={{ domain_name.split('.')[0] }},DC={{ domain_name.split('.')[1] }}"
+    path: "OU={{ item.0.name }},DC={{ domain_name | replace('.', ',DC=') }}"
   loop: "{{ departments | subelements('users') }}"
   loop_control:
     label: "{{ item.1.username }}"
@@ -51,7 +53,7 @@
     scope: global
     category: security
     state: present
-    path: "OU={{ item.name }},DC={{ domain_name.split('.')[0] }},DC={{ domain_name.split('.')[1] }}"
+    path: "OU={{ item.name }},DC={{ domain_name | replace('.', ',DC=') }}"
   loop: "{{ departments }}"
 
 - name: Ajouter les utilisateurs aux groupes
@@ -64,18 +66,24 @@
     label: "{{ item.1.username }}"
 
 # Configuration des GPOs
-- name: Configurer les GPOs - Stratégies de mot de passe
-  community.windows.win_group_policy:
-    name: "Password Policy"
-    path: "DC={{ domain_name.split('.')[0] }},DC={{ domain_name.split('.')[1] }}"
-    setting: 
-      MinimumPasswordLength: 12
-      MaximumPasswordAge: 90
-      PasswordHistorySize: 24
-      LockoutBadCount: 5
-      ResetLockoutCount: 30
-      LockoutDuration: 30
-    state: present
+- name: Configurer la stratégie de mot de passe via SecEdit
+  ansible.windows.win_shell: |
+    secedit /export /cfg C:\secpol.cfg
+    (Get-Content C:\secpol.cfg) -replace 'MinimumPasswordLength = \d+', 'MinimumPasswordLength = 12' | Set-Content C:\secpol.cfg
+    (Get-Content C:\secpol.cfg) -replace 'MaximumPasswordAge = \d+', 'MaximumPasswordAge = 90' | Set-Content C:\secpol.cfg
+    (Get-Content C:\secpol.cfg) -replace 'PasswordHistorySize = \d+', 'PasswordHistorySize = 24' | Set-Content C:\secpol.cfg
+    (Get-Content C:\secpol.cfg) -replace 'LockoutBadCount = \d+', 'LockoutBadCount = 5' | Set-Content C:\secpol.cfg
+    (Get-Content C:\secpol.cfg) -replace 'ResetLockoutCount = \d+', 'ResetLockoutCount = 30' | Set-Content C:\secpol.cfg
+    (Get-Content C:\secpol.cfg) -replace 'LockoutDuration = \d+', 'LockoutDuration = 30' | Set-Content C:\secpol.cfg
+    secedit /configure /db C:\Windows\security\local.sdb /cfg C:\secpol.cfg /areas SECURITYPOLICY
+  register: security_policy_result
+
+- name: Afficher le résultat de la configuration
+  ansible.builtin.debug:
+    msg: "{{ security_policy_result.stdout }}"
+
+
+
 
 # Création des répertoires partagés et configuration des permissions ACL
 - name: Créer les dossiers partagés pour chaque département
