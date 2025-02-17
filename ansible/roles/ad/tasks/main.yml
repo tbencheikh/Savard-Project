@@ -15,7 +15,7 @@
 
 
 - name: Promouvoir le serveur en contrôleur de domaine
-  community.windows.win_domain_controller:
+  ansible.windows.win_domain_controller:
     dns_domain_name: "{{ domain_name }}"
     safe_mode_password: "{{ admin_password }}"
     state: present
@@ -25,7 +25,7 @@
   ansible.windows.win_reboot:
 
 - name: Créer les unités d'organisation (OU)
-  community.windows.win_domain_ou:
+  ansible.windows.win_domain_ou:
     name: "{{ item.name }}"
     path: "DC={{ domain_name.split('.')[0] }},DC={{ domain_name.split('.')[1] }}"
     state: present
