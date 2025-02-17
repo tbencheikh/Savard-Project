@@ -6,8 +6,13 @@
     state: present
 
 - name: Vérifier la présence des modules Windows
-  run: |
-    ansible-doc -l | grep "win_"
+  ansible.builtin.command: ansible-doc -l
+  register: ansible_modules_list
+
+- name: Filtrer les modules Windows
+  ansible.builtin.debug:
+    msg: "{{ ansible_modules_list.stdout_lines | select('search', 'win_') | list }}"
+
 
 - name: Promouvoir le serveur en contrôleur de domaine
   community.windows.win_domain_controller:

@@ -61,7 +61,11 @@ jobs:
           ansible-doc -l | grep "win_"
           echo "✅ Vérification de l'installation Ansible"
           ansible --version
-
+          
+      - name: Vérifier la présence des modules Windows
+        run: |
+          ansible-doc -l | grep "win_"
+        
       - name: Run Ansible
         run: |
           cd ansible
