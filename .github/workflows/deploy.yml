@@ -56,15 +56,19 @@ jobs:
                 ansible_winrm_port: 5985
           EOF
           cat ansible/inventory.yml
-
+      
+      - name: Vérifier le contenu de l'inventaire Ansible
+        run: cat ansible/inventory.yml
+  
       - name: Install Ansible and required collections
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-pip
           pip3 install --upgrade pip
           pip3 install ansible
-          ansible-galaxy collection install community.windows --force  # Collection principale pour Windows
-          ansible-galaxy collection install ansible.windows --force  # Autre collection pour les modules Windows
+          ansible-galaxy collection install microsoft.ad --force
+          ansible-galaxy collection install community.windows --force
+          ansible-galaxy collection install ansible.windows --force
           echo "✅ Collections installées :"
           ansible-galaxy collection list
           echo "✅ Vérification des modules Windows :"
@@ -72,6 +76,13 @@ jobs:
           echo "✅ Vérification de l'installation Ansible :"
           ansible --version
 
+      - name: Vérifier si l'inventaire existe
+        run: |
+          if [ ! -f ansible/inventory.yml ]; then
+            echo "❌ ERREUR : Le fichier d'inventaire Ansible n'existe pas !"
+            exit 1
+          fi
+          
       - name: Run Ansible Playbook
         run: |
           cd ansible

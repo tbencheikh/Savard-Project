@@ -14,7 +14,7 @@
     msg: "{{ ansible_modules_list.stdout_lines | select('search', 'win_') | list }}"
 
 - name: Promouvoir le serveur en contrôleur de domaine
-  ansible.windows.win_domain_controller:
+  microsoft.ad.domain_controller:
     dns_domain_name: "{{ domain_name }}"
     safe_mode_password: "{{ admin_password }}"
     state: present
@@ -29,7 +29,7 @@
     post_reboot_delay: 30
 
 - name: Créer les unités d'organisation (OU)
-  ansible.windows.win_domain_ou:
+  microsoft.ad.ou:
     name: "{{ item.name }}"
     path: "DC={{ domain_name.split('.')[0] }},DC={{ domain_name.split('.')[1] }}"
     state: present

@@ -1,5 +1,5 @@
 ---
-- hosts: windows
+- hosts: savard-server
   gather_facts: no
   vars:
     admin_password: "P@ssw0rd123!"
