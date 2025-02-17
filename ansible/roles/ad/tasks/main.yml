@@ -66,21 +66,20 @@
     label: "{{ item.1.username }}"
 
 # Configuration des GPOs
-- name: Configurer la stratégie de mot de passe via SecEdit
+- name: Configurer les stratégies de mot de passe avec PowerShell
   ansible.windows.win_shell: |
-    secedit /export /cfg C:\secpol.cfg
-    (Get-Content C:\secpol.cfg) -replace 'MinimumPasswordLength = \d+', 'MinimumPasswordLength = 12' | Set-Content C:\secpol.cfg
-    (Get-Content C:\secpol.cfg) -replace 'MaximumPasswordAge = \d+', 'MaximumPasswordAge = 90' | Set-Content C:\secpol.cfg
-    (Get-Content C:\secpol.cfg) -replace 'PasswordHistorySize = \d+', 'PasswordHistorySize = 24' | Set-Content C:\secpol.cfg
-    (Get-Content C:\secpol.cfg) -replace 'LockoutBadCount = \d+', 'LockoutBadCount = 5' | Set-Content C:\secpol.cfg
-    (Get-Content C:\secpol.cfg) -replace 'ResetLockoutCount = \d+', 'ResetLockoutCount = 30' | Set-Content C:\secpol.cfg
-    (Get-Content C:\secpol.cfg) -replace 'LockoutDuration = \d+', 'LockoutDuration = 30' | Set-Content C:\secpol.cfg
-    secedit /configure /db C:\Windows\security\local.sdb /cfg C:\secpol.cfg /areas SECURITYPOLICY
-  register: security_policy_result
+    Set-LocalUser -Name "adminuser" -PasswordNeverExpires $false
+    net accounts /minpwlen:12
+    net accounts /maxpwage:90
+    net accounts /uniquepw:24
+    net accounts /lockoutthreshold:5
+    net accounts /lockoutwindow:30
+    net accounts /lockoutduration:30
+  register: powershell_result
 
-- name: Afficher le résultat de la configuration
+- name: Afficher le résultat de PowerShell
   ansible.builtin.debug:
-    msg: "{{ security_policy_result.stdout }}"
+    msg: "{{ powershell_result.stdout }}"
 
 
 
