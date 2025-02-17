@@ -34,15 +34,6 @@ jobs:
           fi
         shell: bash
 
-      - name: Terraform Init
-        run: terraform init
-        working-directory: ./terraform
-        env:
-          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-
       - name: Import existing Resource Group if it exists
         if: steps.check_rg.outputs.rg_exists == 'true'
         run: |
@@ -55,6 +46,34 @@ jobs:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
           ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+
+      - name: Import existing Virtual Network if it exists
+        run: |
+          VNET_NAME="savard-vnet"
+          SUBSCRIPTION_ID=${{ secrets.ARM_SUBSCRIPTION_ID }}
+          terraform import azurerm_virtual_network.vnet /subscriptions/$SUBSCRIPTION_ID/resourceGroups/savard-rg/providers/Microsoft.Network/virtualNetworks/$VNET_NAME
+        working-directory: ./terraform
+        env:
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+
+      - name: Import existing Public IP if it exists
+        run: |
+          PUBLIC_IP_NAME="savard-public-ip"
+          SUBSCRIPTION_ID=${{ secrets.ARM_SUBSCRIPTION_ID }}
+          terraform import azurerm_public_ip.public_ip /subscriptions/$SUBSCRIPTION_ID/resourceGroups/savard-rg/providers/Microsoft.Network/publicIPAddresses/$PUBLIC_IP_NAME
+        working-directory: ./terraform
+        env:
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ./terraform
 
       - name: Terraform Plan
         run: terraform plan
