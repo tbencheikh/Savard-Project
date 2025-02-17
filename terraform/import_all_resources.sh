@@ -7,23 +7,22 @@ SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID
 # Fonction pour importer une ressource
 import_resource() {
   RESOURCE_TYPE=$1
-  RESOURCE_NAME=$2
-  AZURE_ID=$3
+  AZURE_ID=$2
 
-  echo "Vérification de l'existence de la ressource $RESOURCE_NAME de type $RESOURCE_TYPE..."
-  if az resource show --ids $AZURE_ID &> /dev/null; then
-    echo "La ressource existe. Importation dans Terraform..."
-    terraform import "$RESOURCE_TYPE.$RESOURCE_NAME" "$AZURE_ID"
+  echo "Vérification de l'existence de la ressource de type $RESOURCE_TYPE..."
+  if az resource show --ids "$AZURE_ID" &> /dev/null; then
+    echo "✅ La ressource existe. Importation dans Terraform..."
+    terraform import "$RESOURCE_TYPE" "$AZURE_ID"
     if [ $? -ne 0 ]; then
-      echo "❌ Erreur lors de l'importation de la ressource $RESOURCE_NAME."
+      echo "❌ Erreur lors de l'importation de la ressource $RESOURCE_TYPE."
       exit 1
     fi
   else
-    echo "La ressource n'existe pas. Aucune action nécessaire."
+    echo "⚠️ La ressource $RESOURCE_TYPE n'existe pas. Aucune action nécessaire."
   fi
 }
 
-# Liste des ressources à importer (générée dynamiquement à partir de main.tf)
+# Liste des ressources à importer
 RESOURCES=(
   "azurerm_resource_group.rg /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP"
   "azurerm_virtual_network.vnet /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Network/virtualNetworks/savard-vnet"
@@ -37,8 +36,7 @@ RESOURCES=(
 
 # Importer toutes les ressources
 for RESOURCE in "${RESOURCES[@]}"; do
-  RESOURCE_TYPE=$(echo $RESOURCE | awk '{print $1}')
-  AZURE_ID=$(echo $RESOURCE | awk '{print $2}')
-  RESOURCE_NAME=$(echo $RESOURCE_TYPE | awk -F'.' '{print $2}')  # Extraction du nom de la ressource
-  import_resource "$RESOURCE_TYPE" "$RESOURCE_NAME" "$AZURE_ID"
+  RESOURCE_TYPE=$(echo "$RESOURCE" | awk '{print $1}')
+  AZURE_ID=$(echo "$RESOURCE" | awk '{print $2}')
+  import_resource "$RESOURCE_TYPE" "$AZURE_ID"
 done
