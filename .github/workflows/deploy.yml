@@ -31,9 +31,9 @@ jobs:
 
       - name: Run Import Script
         run: |
-          chmod +x ./terraform/import_all_resources.sh
-          ./terraform/import_all_resources.sh
-        working-directory: ./terraform
+          chmod +x import_all_resources.sh
+          ./import_all_resources.sh
+        working-directory: ./terraform  # Spécifier le répertoire de travail
         env:
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
