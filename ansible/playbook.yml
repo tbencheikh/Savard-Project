@@ -35,6 +35,5 @@
             password: "P@ssw0rd123!"
           - username: "sondages2"
             password: "P@ssw0rd123!"
-    users: "{{ departments | subelements('users') }}"  # Génère la liste complète des utilisateurs
   roles:
-    - ad
+    - ad  # Le rôle 'ad' qui contient les tâches définies dans tasks/main.yml
