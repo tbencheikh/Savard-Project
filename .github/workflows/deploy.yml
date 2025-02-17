@@ -51,8 +51,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-pip
+          pip3 install --upgrade pip
           pip3 install ansible
           ansible-galaxy collection install community.windows --force
+          ansible-galaxy collection install ansible.windows --force
           echo "Vérification des collections installées"
           ansible-galaxy collection list
           echo "Vérification des modules Windows"
