@@ -66,6 +66,7 @@ jobs:
           sudo apt-get install -y python3-pip
           pip3 install --upgrade pip
           pip3 install ansible
+          pip3 install pywinrm
           ansible-galaxy collection install microsoft.ad --force
           ansible-galaxy collection install community.windows --force
           ansible-galaxy collection install ansible.windows --force
@@ -82,7 +83,7 @@ jobs:
             echo "❌ ERREUR : Le fichier d'inventaire Ansible n'existe pas !"
             exit 1
           fi
-          
+
       - name: Run Ansible Playbook
         run: |
           cd ansible
