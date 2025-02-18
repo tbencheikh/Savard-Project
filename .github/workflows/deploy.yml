@@ -130,8 +130,8 @@ jobs:
       - name: Test WinRM Connection
         run: |
           export ANSIBLE_PASSWORD="${{ secrets.ANSIBLE_PASSWORD }}"
-          echo "Tentative de connexion WinRM à 172.173.162.204:5985..."
-          winrm enumerate http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/Win32_OperatingSystem -r:http://172.173.162.204:5985 -u:adminuser -p:$ANSIBLE_PASSWORD -a:basic
+          echo "Tentative de connexion WinRM à ${{ steps.get_ip.outputs.public_ip }}:5985..."
+          winrm enumerate http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/Win32_OperatingSystem -r:http://${{ steps.get_ip.outputs.public_ip }}:5985 -u:adminuser -p:$ANSIBLE_PASSWORD -a:basic
 
       - name: Run Ansible Playbook
         run: |
