@@ -38,8 +38,13 @@ jobs:
 
       - name: Run Import Script
         run: |
-          chmod +x import_all_resources.sh
-          ./import_all_resources.sh
+          export TF_VAR_admin_password="${{ secrets.ADMIN_PASSWORD }}"  # Définir la variable d'environnement
+          terraform import azurerm_resource_group.rg /subscriptions/***/resourceGroups/savard-rg
+      
+      - name: Run Additional Import Script (si nécessaire)
+        run: |
+          chmod +x import_all_resources.sh  # Permissions d'exécution (si nécessaire)
+          ./import_all_resources.sh       # Exécution du script (si nécessaire)
         working-directory: ./terraform
         env:
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
