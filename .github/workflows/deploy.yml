@@ -36,6 +36,10 @@ jobs:
       - name: Donne les permissions d'exécution au script import_all_resources.sh
         run: chmod +x ./terraform/import_all_resources.sh
 
+      - name: Debug Terraform Variables
+        run: env | grep TF_VAR
+      
+      
       - name: Run Import Script
         run: |
           export TF_VAR_admin_password="${{ secrets.ADMIN_PASSWORD }}"
