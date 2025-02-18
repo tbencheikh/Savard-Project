@@ -126,6 +126,12 @@ jobs:
             echo "❌ ERREUR : Le fichier d'inventaire Ansible n'existe pas !"
             exit 1
           fi
+          
+      - name: Test WinRM Connection
+        run: |
+          export ANSIBLE_PASSWORD="${{ secrets.ANSIBLE_PASSWORD }}"
+          echo "Tentative de connexion WinRM à 172.173.162.204:5985..."
+          winrm enumerate http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/Win32_OperatingSystem -r:http://172.173.162.204:5985 -u:adminuser -p:$ANSIBLE_PASSWORD -a:basic
 
       - name: Run Ansible Playbook
         run: |
