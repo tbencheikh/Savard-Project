@@ -36,11 +36,10 @@ jobs:
       - name: Donne les permissions d'exécution au script import_all_resources.sh
         run: chmod +x ./terraform/import_all_resources.sh
 
-      - name: Run Import Script
+      - name: Exécuter le script avec chemin absolu
         run: |
-          timeout 300s bash ./terraform/import_all_resources.sh
-        working-directory: ./terraform
-         
+          timeout 300s bash /home/runner/work/_temp/terraform/import_all_resources.sh
+        working-directory: ./terraform         
         env:
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
