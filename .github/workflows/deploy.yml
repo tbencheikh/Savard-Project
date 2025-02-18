@@ -40,21 +40,16 @@ jobs:
         run: |
           chmod +x import_all_resources.sh
           ./import_all_resources.sh
-        working-directory: ./terraform  # Spécifier le répertoire de travail     
+        working-directory: ./terraform
         env:
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
           ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-      
 
       - name: Afficher les logs Terraform
         if: always()
         run: cat ./terraform/import_log.txt
-
-      # Les autres étapes de Terraform...
-
-      
 
       - name: Terraform Plan
         run: terraform plan -no-color -input=false -out=tfplan
