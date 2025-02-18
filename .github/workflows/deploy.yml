@@ -36,6 +36,22 @@ jobs:
       - name: Donne les permissions d'exécution au script import_all_resources.sh
         run: chmod +x ./terraform/import_all_resources.sh
 
+      - name: Vérification du mot de passe
+        run: |
+          if [[ -z "${{ secrets.ADMIN_PASSWORD }}" ]]; then
+            echo "❌ ERREUR: ADMIN_PASSWORD est vide !"
+            exit 1
+          else
+            echo "✅ ADMIN_PASSWORD est bien défini."
+          fi
+
+      - name: Debug GitHub Secret Injection
+        run: |
+          echo "TF_VAR_admin_password=${{ secrets.ADMIN_PASSWORD }}" >> $GITHUB_ENV
+          echo "Vérification du secret injecté..."
+          echo "TF_VAR_admin_password=$TF_VAR_admin_password"
+        
+
       - name: Debug Terraform Variables
         run: env | grep TF_VAR
       
