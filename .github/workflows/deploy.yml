@@ -96,7 +96,7 @@ jobs:
 
       - name: Afficher les logs d’extension WinRM
         run: |
-          az vm extension show --resource-group savard-rg --vm-name savard-server --name enable-winrm --query "{Status: provisioningState, Messages: instanceView.statuses}"
+          az vm extension show --resource-group savard-rg --vm-name savard-server --name winrm_setup --query "{Status: provisioningState, Messages: instanceView.statuses}"
         
 
       - name: Get Public IP
