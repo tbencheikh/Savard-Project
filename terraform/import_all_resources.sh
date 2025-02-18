@@ -3,22 +3,27 @@
 # Variables
 RESOURCE_GROUP="savard-rg"
 SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID
+LOG_FILE="./terraform/import_log.txt"
+
+# Créer ou réinitialiser le fichier de log
+> $LOG_FILE
 
 # Fonction pour importer une ressource
 import_resource() {
   RESOURCE_TYPE=$1
-  AZURE_ID=$2
+  RESOURCE_NAME=$2
+  AZURE_ID=$3
 
-  echo "Vérification de l'existence de la ressource de type $RESOURCE_TYPE..."
-  if az resource show --ids "$AZURE_ID" &> /dev/null; then
-    echo "✅ La ressource existe. Importation dans Terraform..."
-    terraform import "$RESOURCE_TYPE" "$AZURE_ID"
+  echo "Vérification de l'existence de la ressource $RESOURCE_NAME de type $RESOURCE_TYPE..." | tee -a $LOG_FILE
+  if az resource show --ids $AZURE_ID &> /dev/null; then
+    echo "La ressource existe. Importation dans Terraform..." | tee -a $LOG_FILE
+    terraform import "$RESOURCE_TYPE.$RESOURCE_NAME" "$AZURE_ID" | tee -a $LOG_FILE
     if [ $? -ne 0 ]; then
-      echo "❌ Erreur lors de l'importation de la ressource $RESOURCE_TYPE."
+      echo "❌ Erreur lors de l'importation de la ressource $RESOURCE_NAME." | tee -a $LOG_FILE
       exit 1
     fi
   else
-    echo "⚠️ La ressource $RESOURCE_TYPE n'existe pas. Aucune action nécessaire."
+    echo "La ressource n'existe pas. Aucune action nécessaire." | tee -a $LOG_FILE
   fi
 }
 
@@ -36,7 +41,8 @@ RESOURCES=(
 
 # Importer toutes les ressources
 for RESOURCE in "${RESOURCES[@]}"; do
-  RESOURCE_TYPE=$(echo "$RESOURCE" | awk '{print $1}')
-  AZURE_ID=$(echo "$RESOURCE" | awk '{print $2}')
-  import_resource "$RESOURCE_TYPE" "$AZURE_ID"
+  RESOURCE_TYPE=$(echo $RESOURCE | awk '{print $1}')
+  AZURE_ID=$(echo $RESOURCE | awk '{print $2}')
+  RESOURCE_NAME=$(echo $RESOURCE_TYPE | awk -F'.' '{print $2}')
+  import_resource "$RESOURCE_TYPE" "$RESOURCE_NAME" "$AZURE_ID"
 done
