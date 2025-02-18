@@ -156,7 +156,15 @@ jobs:
             echo "❌ ERREUR : Le fichier d'inventaire Ansible n'existe pas !"
             exit 1
           fi
-          
+        
+      - name: Debug Ansible Password
+        run: |
+          echo "🔍 Vérification de la variable ANSIBLE_PASSWORD..."
+          echo "ANSIBLE_PASSWORD est défini ? [$(if [[ -z "$ANSIBLE_PASSWORD" ]]; then echo "NON"; else echo "OUI"; fi)]"
+        env:
+          ANSIBLE_PASSWORD: ${{ secrets.ANSIBLE_PASSWORD }}
+
+
       - name: Test WinRM Connection
         run: |
           export ANSIBLE_PASSWORD="${{ secrets.ANSIBLE_PASSWORD }}"
