@@ -81,17 +81,17 @@ jobs:
             exit 1
           else
             cat <<EOF > ansible/inventory.yml
-            all:
-              hosts:
-                savard-server:
-                  ansible_host: "${{ steps.get_ip.outputs.public_ip }}"
-                  ansible_user: "adminuser"
-                  ansible_password: "${{ secrets.ANSIBLE_PASSWORD }}"
-                  ansible_connection: "winrm"
-                  ansible_winrm_transport: "basic"
-                  ansible_winrm_scheme: "http"
-                  ansible_winrm_port: 5985
-            EOF
+all:
+  hosts:
+    savard-server:
+      ansible_host: "${{ steps.get_ip.outputs.public_ip }}"
+      ansible_user: "adminuser"
+      ansible_password: "${{ secrets.ANSIBLE_PASSWORD }}"
+      ansible_connection: "winrm"
+      ansible_winrm_transport: "basic"
+      ansible_winrm_scheme: "http"
+      ansible_winrm_port: 5985
+EOF
             cat ansible/inventory.yml
           fi
 
