@@ -33,12 +33,15 @@ jobs:
         run: terraform validate
         working-directory: ./terraform
 
-      - name: Donner des permissions d'exécution au script
-        run: chmod +x ./terraform/import_all_resources.sh
+      - name: Vérifier si le script existe
+        run: ls -l terraform/import_all_resources.sh
+      
+      - name: Donne les permissions d'exécution au script import_all_resources.sh
+        run: chmod +x terraform/import_all_resources.sh
       
       - name: Run Import Script
         run: |
-          timeout 300s ./terraform/import_all_resources.sh
+          timeout 300s terraform/import_all_resources.sh
         working-directory: ./terraform
         env:
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
