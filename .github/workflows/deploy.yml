@@ -50,6 +50,7 @@ jobs:
 
       - name: Run Import Script
         run: |
+          set -x
           timeout 300s ./terraform/import_all_resources.sh
         working-directory: ./terraform
         env:
@@ -57,6 +58,7 @@ jobs:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
           ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      
 
       - name: Afficher les logs Terraform
         if: always()
