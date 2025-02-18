@@ -88,19 +88,25 @@ resource "azurerm_windows_virtual_machine" "server" {
   }
 }
 
-resource "azurerm_virtual_machine_extension" "winrm_extension" {
-  name                 = "enable-winrm"
-  virtual_machine_id   = azurerm_windows_virtual_machine.server.id
+resource "azurerm_virtual_machine_extension" "winrm_setup" {
+  name                 = "winrm-config"
+  virtual_machine_id   = azurerm_windows_virtual_machine.savard-server.id
   publisher            = "Microsoft.Compute"
   type                 = "CustomScriptExtension"
   type_handler_version = "1.10"
 
   settings = <<SETTINGS
     {
-      "commandToExecute": "powershell -ExecutionPolicy Unrestricted -Command Enable-PSRemoting -Force; Set-Item WSMan:\\localhost\\Client\\AllowUnencrypted $true; Set-Item WSMan:\\localhost\\Server\\Auth\\Basic $true; New-NetFirewallRule -DisplayName 'Allow WINRM' -Direction Inbound -Protocol TCP -Action Allow -LocalPort 5985"
+      "commandToExecute": "powershell -ExecutionPolicy Unrestricted -File winrm-setup.ps1"
     }
 SETTINGS
+
+  protected_settings = <<PROTECTED_SETTINGS
+    {
+    }
+PROTECTED_SETTINGS
 }
+
 
 output "public_ip" {
   value = azurerm_public_ip.public_ip.ip_address

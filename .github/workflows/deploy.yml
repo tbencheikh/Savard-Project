@@ -167,10 +167,7 @@ jobs:
         env:
           ANSIBLE_PASSWORD: ${{ secrets.ANSIBLE_PASSWORD }}
 
-      - name: Exécuter le playbook de configuration WinRM
-        run: |
-          cd ansible
-          ansible-playbook -i inventory.yml winrm-setup.yml -vvv
+     
 
       - name: Test Ansible WinRM Connection
         run: |
