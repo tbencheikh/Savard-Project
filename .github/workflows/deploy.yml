@@ -33,25 +33,37 @@ jobs:
         run: terraform validate
         working-directory: ./terraform
 
+      - name: Vérifier si le répertoire terraform existe
+        run: ls -l ./terraform
+
       - name: Vérifier si le script existe
-        run: ls -l terraform/import_all_resources.sh
-      
+        run: ls -l ./terraform/import_all_resources.sh
+
+      - name: Vérifier les permissions du script avant modification
+        run: ls -l ./terraform/import_all_resources.sh
+
       - name: Donne les permissions d'exécution au script import_all_resources.sh
-        run: chmod +x terraform/import_all_resources.sh
-      
+        run: chmod +x ./terraform/import_all_resources.sh
+
+      - name: Afficher le contenu du fichier de log
+        run: cat ./terraform/import_log.txt || echo "Le fichier de log n'existe pas encore."
+
       - name: Run Import Script
         run: |
-          timeout 300s terraform/import_all_resources.sh
+          timeout 300s ./terraform/import_all_resources.sh
         working-directory: ./terraform
         env:
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
           ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-      
+
       - name: Afficher les logs Terraform
         if: always()
         run: cat ./terraform/import_log.txt
+
+      # Les autres étapes de Terraform...
+
       
 
       - name: Terraform Plan
