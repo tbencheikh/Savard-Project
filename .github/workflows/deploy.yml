@@ -47,6 +47,8 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -no-color -input=false -out=tfplan
         working-directory: ./terraform
+        env:
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan

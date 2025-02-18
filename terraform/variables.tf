@@ -3,3 +3,7 @@ variable "admin_password" {
   type        = string
   sensitive   = true
 }
+variable "subscription_id" {
+  description = "ID de la souscription Azure"
+  type        = string
+}
