@@ -40,6 +40,7 @@ jobs:
         run: |
           export TF_VAR_admin_password="${{ secrets.ADMIN_PASSWORD }}"  # Définir la variable d'environnement
           terraform import azurerm_resource_group.rg /subscriptions/***/resourceGroups/savard-rg
+        working-directory: ./terraform
       
       - name: Run Additional Import Script (si nécessaire)
         run: |
