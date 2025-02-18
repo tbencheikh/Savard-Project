@@ -60,6 +60,8 @@ jobs:
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
         working-directory: ./terraform
+        env:
+          TF_VAR_admin_password: ${{ secrets.ADMIN_PASSWORD }}
 
       - name: Get Public IP
         id: get_ip
