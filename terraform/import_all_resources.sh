@@ -3,7 +3,7 @@
 # Variables
 RESOURCE_GROUP="savard-rg"
 SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID
-LOG_FILE="./terraform/import_log.txt"
+LOG_FILE="./import_log.txt"
 
 # Créer ou réinitialiser le fichier de log
 > $LOG_FILE
