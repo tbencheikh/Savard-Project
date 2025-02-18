@@ -94,6 +94,11 @@ jobs:
         env:
           TF_VAR_admin_password: ${{ secrets.ADMIN_PASSWORD }}
 
+      - name: Afficher les logs d’extension WinRM
+        run: |
+          az vm extension show --resource-group savard-rg --vm-name savard-server --name enable-winrm --query "{Status: provisioningState, Messages: instanceView.statuses}"
+        
+
       - name: Get Public IP
         id: get_ip
         run: |
@@ -164,6 +169,14 @@ jobs:
         env:
           ANSIBLE_PASSWORD: ${{ secrets.ANSIBLE_PASSWORD }}
 
+      - name: Test Ansible WinRM Connection
+        run: |
+          ansible -i ansible/inventory.yml all -m win_ping -vvv
+        
+      - name: Debug Remote PowerShell via WinRM
+        run: |
+          ansible -i ansible/inventory.yml all -m ansible.windows.win_shell -a "whoami" -vvv
+        
 
       - name: Test WinRM Connection
         run: |
