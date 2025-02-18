@@ -129,12 +129,10 @@ jobs:
             echo "      ansible_winrm_transport: \"basic\"" >> ansible/inventory.yml
             echo "      ansible_winrm_scheme: \"http\"" >> ansible/inventory.yml
             echo "      ansible_winrm_port: 5985" >> ansible/inventory.yml
+            echo "      ansible_winrm_message_encryption: \"never\"" >> ansible/inventory.yml
             cat ansible/inventory.yml  # Optional: Print the inventory for debugging
           fi
   
-      - name: Vérifier le contenu de l'inventaire Ansible
-        run: cat ansible/inventory.yml
-
       - name: Vérifier le contenu de l'inventaire Ansible
         run: cat ansible/inventory.yml
 
@@ -168,6 +166,11 @@ jobs:
           echo "ANSIBLE_PASSWORD est défini ? [$(if [[ -z "$ANSIBLE_PASSWORD" ]]; then echo "NON"; else echo "OUI"; fi)]"
         env:
           ANSIBLE_PASSWORD: ${{ secrets.ANSIBLE_PASSWORD }}
+
+      - name: Exécuter le playbook de configuration WinRM
+        run: |
+          cd ansible
+          ansible-playbook -i inventory.yml winrm-setup.yml -vvv
 
       - name: Test Ansible WinRM Connection
         run: |
