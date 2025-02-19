@@ -113,7 +113,8 @@ resource "azurerm_storage_blob" "winrm_script" {
   storage_account_name   = azurerm_storage_account.storage.name
   storage_container_name = azurerm_storage_container.scripts.name
   type                   = "Block"
-  source                 = "./terraform/winrm-setup.ps1"
+  source                 = "${path.module}/winrm-setup.ps1"
+
 }
 
 resource "azurerm_virtual_machine_extension" "winrm_setup" {
