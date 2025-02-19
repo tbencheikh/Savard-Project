@@ -8,6 +8,12 @@ LOG_FILE="./import_log.txt"
 # Créer ou réinitialiser le fichier de log
 > $LOG_FILE
 
+# Vérification des variables obligatoires
+if [[ -z "$SUBSCRIPTION_ID" ]]; then
+  echo "❌ ERREUR : L'ID de l'abonnement Azure (SUBSCRIPTION_ID) est vide !" | tee -a $LOG_FILE
+  exit 1
+fi
+
 # Fonction pour importer une ressource
 import_resource() {
   RESOURCE_TYPE=$1
@@ -27,9 +33,17 @@ import_resource() {
     echo "📥 Importation de $RESOURCE_NAME dans Terraform..." | tee -a $LOG_FILE
     terraform import "$RESOURCE_TYPE.$RESOURCE_NAME" "$AZURE_ID" | tee -a $LOG_FILE
     if [ $? -ne 0 ]; then
-      echo "❌ Erreur lors de l'importation de $RESOURCE_NAME." | tee -a $LOG_FILE
+      echo "❌ ERREUR : L'importation de $RESOURCE_NAME ($RESOURCE_TYPE) a échoué !" | tee -a $LOG_FILE
       exit 1
     fi
+
+    # Vérifier que la ressource est bien dans Terraform après l'importation
+    terraform state list | grep "$RESOURCE_TYPE.$RESOURCE_NAME"
+    if [ $? -ne 0 ]; then
+      echo "❌ ERREUR : La ressource $RESOURCE_NAME ($RESOURCE_TYPE) n'est pas présente dans l'état Terraform après import !" | tee -a $LOG_FILE
+      exit 1
+    fi
+
   else
     echo "⚠️ La ressource $RESOURCE_NAME n'existe pas sur Azure, importation ignorée." | tee -a $LOG_FILE
   fi
@@ -54,5 +68,9 @@ for RESOURCE in "${RESOURCES[@]}"; do
   AZURE_ID=$(echo "$RESOURCE" | awk '{print $3}')
   import_resource "$RESOURCE_TYPE" "$RESOURCE_NAME" "$AZURE_ID"
 done
+
+# Forcer une mise à jour de Terraform après l'importation
+echo "🔄 Mise à jour de l'état Terraform..."
+terraform refresh | tee -a $LOG_FILE
 
 echo "✅ Importation terminée avec succès !" | tee -a $LOG_FILE
