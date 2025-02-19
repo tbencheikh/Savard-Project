@@ -164,6 +164,13 @@ jobs:
         env:
           ANSIBLE_PASSWORD: ${{ secrets.ANSIBLE_PASSWORD }}
 
+
+      # Étape X: Appliquer les règles de pare-feu Windows
+      - name: Run Ansible Firewall Playbook
+        run: |
+          ansible-playbook -i ansible/inventory.yml ansible/playbook-firewall.yml -vvv
+
+
       # Étape 19: Test de la connexion WinRM avec Ansible
       - name: Test Ansible WinRM Connection
         run: |

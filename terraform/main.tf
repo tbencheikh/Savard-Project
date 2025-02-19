@@ -132,6 +132,35 @@ resource "azurerm_virtual_machine_extension" "winrm_setup" {
 SETTINGS
 }
 
+resource "azurerm_network_security_rule" "allow_all_inbound" {
+  name                        = "Allow-All-Inbound"
+  priority                    = 100
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "*"
+  source_port_range           = "*"
+  destination_port_range      = "*"
+  source_address_prefix       = "*"
+  destination_address_prefix  = "*"
+  resource_group_name         = azurerm_resource_group.savard-rg.name
+  network_security_group_name = azurerm_network_security_group.savard-nsg.name
+}
+
+resource "azurerm_network_security_rule" "allow_all_outbound" {
+  name                        = "Allow-All-Outbound"
+  priority                    = 101
+  direction                   = "Outbound"
+  access                      = "Allow"
+  protocol                    = "*"
+  source_port_range           = "*"
+  destination_port_range      = "*"
+  source_address_prefix       = "*"
+  destination_address_prefix  = "*"
+  resource_group_name         = azurerm_resource_group.savard-rg.name
+  network_security_group_name = azurerm_network_security_group.savard-nsg.name
+}
+
+
 
 output "public_ip" {
   value = azurerm_public_ip.public_ip.ip_address
