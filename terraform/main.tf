@@ -98,13 +98,13 @@ resource "azurerm_storage_account" "storage" {
 
 resource "azurerm_storage_container" "scripts" {
   name                  = "scripts"
-  storage_account_name  = azurerm_storage_account.storage.id  # Changement ici
+  storage_account_name  = azurerm_storage_account.storage.name  # Utilisation du nom du compte de stockage ici
   container_access_type = "private"
 }
 
 resource "azurerm_storage_blob" "winrm_script" {
   name                   = "winrm-setup.ps1"
-  storage_account_name   = azurerm_storage_account.storage.id  # Changement ici
+  storage_account_name   = azurerm_storage_account.storage.name  # Utilisation du nom du compte de stockage ici
   storage_container_name = azurerm_storage_container.scripts.name
   type                   = "Block"
   source                 = "./terraform/winrm-setup.ps1"  # Assurez-vous que le fichier existe
