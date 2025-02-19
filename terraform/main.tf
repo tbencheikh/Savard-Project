@@ -105,7 +105,7 @@ resource "azurerm_storage_account" "storage" {
 resource "azurerm_storage_container" "scripts" {
   name                  = "scripts"
   storage_account_name  = azurerm_storage_account.storage.name
-  container_access_type = "private"
+  container_access_type = "blob"
 }
 
 resource "azurerm_storage_blob" "winrm_script" {
@@ -125,11 +125,13 @@ resource "azurerm_virtual_machine_extension" "winrm_setup" {
   type_handler_version = "1.10"
 
   settings = <<SETTINGS
-    {
-      "scriptUri": "https://${azurerm_storage_account.storage.name}.blob.core.windows.net/${azurerm_storage_container.scripts.name}/winrm-setup.ps1"
-    }
+{
+  "fileUris": ["https://${azurerm_storage_account.storage.name}.blob.core.windows.net/scripts/winrm-setup.ps1"],
+  "commandToExecute": "powershell -ExecutionPolicy Unrestricted -File winrm-setup.ps1"
+}
 SETTINGS
 }
+
 
 output "public_ip" {
   value = azurerm_public_ip.public_ip.ip_address
