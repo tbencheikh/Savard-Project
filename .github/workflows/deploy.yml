@@ -63,8 +63,8 @@ jobs:
       - name: Run Import Script
         run: |
           export TF_VAR_admin_password="${{ secrets.ADMIN_PASSWORD }}"
-          chmod +x ./terraform/import_all_resources.sh
-          ./terraform/import_all_resources.sh
+          chmod +x ./import_all_resources.sh
+          ./import_all_resources.sh
         working-directory: ./terraform
         env:
           TF_VAR_admin_password: ${{ secrets.ADMIN_PASSWORD }}

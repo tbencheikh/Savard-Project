@@ -1,16 +1,3 @@
-variable "resource_group_name" {
-  default = "savard-rg"
-}
-variable "location" {
-  default = "eastus"
-}
-variable "vnet_name" {
-  default = "savard-vnet"
-}
-variable "subnet_name" {
-  default = "savard-subnet"
-}
-
 provider "azurerm" {
   features {}
   subscription_id = var.subscription_id
