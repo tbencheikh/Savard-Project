@@ -1,22 +1,43 @@
+variable "subscription_id" {}
+variable "admin_password" {}
+variable "resource_group_name" {
+  default = "savard-rg"
+}
+variable "location" {
+  default = "eastus"
+}
+variable "vnet_name" {
+  default = "savard-vnet"
+}
+variable "subnet_name" {
+  default = "savard-subnet"
+}
+
 provider "azurerm" {
   features {}
   subscription_id = var.subscription_id
 }
 
 resource "azurerm_resource_group" "rg" {
-  name     = "savard-rg"
-  location = "eastus"
+  name     = var.resource_group_name
+  location = var.location
+  tags = {
+    Environment = "Production"
+  }
 }
 
 resource "azurerm_virtual_network" "vnet" {
-  name                = "savard-vnet"
+  name                = var.vnet_name
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
+  tags = {
+    Environment = "Production"
+  }
 }
 
 resource "azurerm_subnet" "subnet" {
-  name                 = "savard-subnet"
+  name                 = var.subnet_name
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.0.1.0/24"]
@@ -61,7 +82,7 @@ resource "azurerm_network_interface" "nic" {
   }
 }
 
-resource "azurerm_network_interface_security_group_association" "example" {
+resource "azurerm_network_interface_security_group_association" "nic_nsg_assoc" {
   network_interface_id      = azurerm_network_interface.nic.id
   network_security_group_id = azurerm_network_security_group.winrm_nsg.id
 }
@@ -92,22 +113,22 @@ resource "azurerm_storage_account" "storage" {
   name                     = "savardstorage"
   resource_group_name       = azurerm_resource_group.rg.name
   location                 = azurerm_resource_group.rg.location
-  account_tier              = "Standard"
+  account_tier             = "Standard"
   account_replication_type = "LRS"
 }
 
 resource "azurerm_storage_container" "scripts" {
   name                  = "scripts"
-  storage_account_name  = azurerm_storage_account.storage.name  # Utilisation du nom du compte de stockage ici
+  storage_account_name  = azurerm_storage_account.storage.name
   container_access_type = "private"
 }
 
 resource "azurerm_storage_blob" "winrm_script" {
   name                   = "winrm-setup.ps1"
-  storage_account_name   = azurerm_storage_account.storage.name  # Utilisation du nom du compte de stockage ici
+  storage_account_name   = azurerm_storage_account.storage.name
   storage_container_name = azurerm_storage_container.scripts.name
   type                   = "Block"
-  source                 = "./terraform/winrm-setup.ps1"  # Assurez-vous que le fichier existe
+  source                 = "./terraform/winrm-setup.ps1"
 }
 
 resource "azurerm_virtual_machine_extension" "winrm_setup" {
@@ -123,7 +144,6 @@ resource "azurerm_virtual_machine_extension" "winrm_setup" {
     }
 SETTINGS
 }
-
 
 output "public_ip" {
   value = azurerm_public_ip.public_ip.ip_address
