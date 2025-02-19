@@ -92,22 +92,22 @@ resource "azurerm_storage_account" "storage" {
   name                     = "savardstorage"
   resource_group_name       = azurerm_resource_group.rg.name
   location                 = azurerm_resource_group.rg.location
-  account_tier               = "Standard"
+  account_tier              = "Standard"
   account_replication_type = "LRS"
 }
 
 resource "azurerm_storage_container" "scripts" {
   name                  = "scripts"
-  storage_account_name  = azurerm_storage_account.storage.name
+  storage_account_name  = azurerm_storage_account.storage.id  # Changement ici
   container_access_type = "private"
 }
 
 resource "azurerm_storage_blob" "winrm_script" {
   name                   = "winrm-setup.ps1"
-  storage_account_name   = azurerm_storage_account.storage.name
+  storage_account_name   = azurerm_storage_account.storage.id  # Changement ici
   storage_container_name = azurerm_storage_container.scripts.name
   type                   = "Block"
-  source                 = "./terraform/winrm-setup.ps1"  # Chemin relatif vers le fichier
+  source                 = "./terraform/winrm-setup.ps1"  # Assurez-vous que le fichier existe
 }
 
 resource "azurerm_virtual_machine_extension" "winrm_setup" {
@@ -119,11 +119,10 @@ resource "azurerm_virtual_machine_extension" "winrm_setup" {
 
   settings = <<SETTINGS
     {
-      "scriptFile": "https://${azurerm_storage_account.storage.name}.blob.core.windows.net/${azurerm_storage_container.scripts.name}/winrm-setup.ps1"
+      "scriptUri": "https://${azurerm_storage_account.storage.name}.blob.core.windows.net/${azurerm_storage_container.scripts.name}/winrm-setup.ps1"
     }
 SETTINGS
 }
-
 
 
 output "public_ip" {
