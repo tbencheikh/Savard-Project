@@ -9,17 +9,21 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      # Étape 1: Checkout du code
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Étape 2: Setup de Terraform
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
+      # Étape 3: Connexion à Azure
       - name: Login to Azure
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      # Étape 4: Initialisation de Terraform
       - name: Terraform Init
         run: terraform init
         working-directory: ./terraform
@@ -29,13 +33,16 @@ jobs:
           ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
           ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
 
+      # Étape 5: Validation de la configuration Terraform
       - name: Terraform Validate
         run: terraform validate
         working-directory: ./terraform
 
+      # Étape 6: Permissions pour le script d'importation
       - name: Donne les permissions d'exécution au script import_all_resources.sh
         run: chmod +x ./terraform/import_all_resources.sh
 
+      # Étape 7: Vérification du mot de passe ADMIN
       - name: Vérification du mot de passe
         run: |
           if [[ -z "${{ secrets.ADMIN_PASSWORD }}" ]]; then
@@ -45,42 +52,29 @@ jobs:
             echo "✅ ADMIN_PASSWORD est bien défini."
           fi
 
+      # Étape 8: Débogage des variables GitHub Secrets
       - name: Debug GitHub Secret Injection
         run: |
           echo "TF_VAR_admin_password=${{ secrets.ADMIN_PASSWORD }}" >> $GITHUB_ENV
           echo "Vérification du secret injecté..."
           echo "TF_VAR_admin_password=$TF_VAR_admin_password"
-        
 
-      - name: Debug Terraform Variables
-        run: env | grep TF_VAR
-      
-      
+      # Étape 9: Importer les ressources Terraform
       - name: Run Import Script
         run: |
           export TF_VAR_admin_password="${{ secrets.ADMIN_PASSWORD }}"
-          chmod +x import_all_resources.sh
-          ./import_all_resources.sh
+          chmod +x ./terraform/import_all_resources.sh
+          ./terraform/import_all_resources.sh
         working-directory: ./terraform
         env:
           TF_VAR_admin_password: ${{ secrets.ADMIN_PASSWORD }}
-      
-      
-      - name: Run Additional Import Script (si nécessaire)
-        run: |
-          chmod +x import_all_resources.sh  # Permissions d'exécution (si nécessaire)
-          ./import_all_resources.sh       # Exécution du script (si nécessaire)
-        working-directory: ./terraform
-        env:
-          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
 
+      # Étape 10: Afficher les logs de l'importation
       - name: Afficher les logs Terraform
         if: always()
         run: cat ./terraform/import_log.txt
 
+      # Étape 11: Planification de Terraform
       - name: Terraform Plan
         run: terraform plan -no-color -input=false -out=tfplan
         working-directory: ./terraform
@@ -88,17 +82,14 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
           TF_VAR_admin_password: ${{ secrets.ADMIN_PASSWORD }}
 
+      # Étape 12: Application du plan Terraform
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
         working-directory: ./terraform
         env:
           TF_VAR_admin_password: ${{ secrets.ADMIN_PASSWORD }}
 
-      - name: Afficher les logs d’extension WinRM
-        run: |
-          az vm extension show --resource-group savard-rg --vm-name savard-server --name winrm_setup --query "{Status: provisioningState, Messages: instanceView.statuses}"
-        
-
+      # Étape 13: Récupération de l'IP publique
       - name: Get Public IP
         id: get_ip
         run: |
@@ -112,6 +103,7 @@ jobs:
             echo "::set-output name=public_ip::$PUBLIC_IP"
           fi
 
+      # Étape 14: Générer l'inventaire Ansible
       - name: Generate Ansible Inventory (YAML format)
         id: generate_inventory
         run: |
@@ -132,20 +124,19 @@ jobs:
             echo "      ansible_winrm_message_encryption: \"never\"" >> ansible/inventory.yml
             cat ansible/inventory.yml  # Optional: Print the inventory for debugging
           fi
-  
+
+      # Étape 15: Vérification de l'inventaire Ansible
       - name: Vérifier le contenu de l'inventaire Ansible
         run: cat ansible/inventory.yml
 
+      # Étape 16: Installation des dépendances Ansible
       - name: Install Ansible and required collections
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-pip
           pip3 install --upgrade pip
-          pip3 install ansible
-          pip3 install pywinrm
-          ansible-galaxy collection install microsoft.ad --force
-          ansible-galaxy collection install community.windows --force
-          ansible-galaxy collection install ansible.windows --force
+          pip3 install ansible pywinrm
+          ansible-galaxy collection install microsoft.ad community.windows ansible.windows --force
           echo "✅ Collections installées :"
           ansible-galaxy collection list
           echo "✅ Vérification des modules Windows :"
@@ -153,13 +144,15 @@ jobs:
           echo "✅ Vérification de l'installation Ansible :"
           ansible --version
 
+      # Étape 17: Vérifier si l'inventaire existe
       - name: Vérifier si l'inventaire existe
         run: |
           if [ ! -f ansible/inventory.yml ]; then
             echo "❌ ERREUR : Le fichier d'inventaire Ansible n'existe pas !"
             exit 1
           fi
-        
+
+      # Étape 18: Débogage du mot de passe Ansible
       - name: Debug Ansible Password
         run: |
           echo "🔍 Vérification de la variable ANSIBLE_PASSWORD..."
@@ -167,29 +160,18 @@ jobs:
         env:
           ANSIBLE_PASSWORD: ${{ secrets.ANSIBLE_PASSWORD }}
 
-     
-
+      # Étape 19: Test de la connexion WinRM avec Ansible
       - name: Test Ansible WinRM Connection
         run: |
           ansible -i ansible/inventory.yml all -m win_ping -vvv
-        
-      - name: Debug Remote PowerShell via WinRM
-        run: |
-          ansible -i ansible/inventory.yml all -m ansible.windows.win_shell -a "whoami" -vvv
-        
 
-      - name: Test WinRM Connection
-        run: |
-          export ANSIBLE_PASSWORD="${{ secrets.ANSIBLE_PASSWORD }}"
-          echo "Tentative de connexion WinRM à ${{ steps.get_ip.outputs.public_ip }}:5985..."
-          python3 scripts/test_winrm.py ${{ steps.get_ip.outputs.public_ip }} adminuser $ANSIBLE_PASSWORD
-        
-
+      # Étape 20: Exécution de la playbook Ansible
       - name: Run Ansible Playbook
         run: |
           cd ansible
           ansible-playbook -i inventory.yml playbook.yml -vvv
 
+      # Étape 21: Nettoyage en cas d'échec
       - name: Cleanup on Failure
         if: failure()
         run: terraform destroy -auto-approve

@@ -1,5 +1,3 @@
-variable "subscription_id" {}
-variable "admin_password" {}
 variable "resource_group_name" {
   default = "savard-rg"
 }
