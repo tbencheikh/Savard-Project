@@ -5,7 +5,6 @@
     include_management_tools: yes
     state: present
 
-
 - name: Vérifier la présence des modules Windows
   ansible.builtin.command: ansible-doc -l
   register: ansible_modules_list
