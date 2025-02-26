@@ -107,7 +107,7 @@ jobs:
             echo "::set-output name=public_ip::$PUBLIC_IP"
           fi
 
-      # Étape 14: Générer l'inventaire Ansible
+            # Étape 14: Générer l'inventaire Ansible
       - name: Generate Ansible Inventory (YAML format)
         id: generate_inventory
         run: |
@@ -115,21 +115,24 @@ jobs:
             echo "❌ Erreur : Aucune adresse IP publique disponible pour générer l'inventaire Ansible."
             exit 1
           else
-            echo "all:" > ansible/inventory.yml
-            echo "  hosts:" >> ansible/inventory.yml
-            echo "    savard-server:" >> ansible/inventory.yml
-            echo "      ansible_host: \"${{ steps.get_ip.outputs.public_ip }}\"" >> ansible/inventory.yml
-            echo "      ansible_user: \"adminuser\"" >> ansible/inventory.yml
-            echo "      ansible_password: \"${{ secrets.ANSIBLE_PASSWORD }}\"" >> ansible/inventory.yml
-            echo "      ansible_connection: \"winrm\"" >> ansible/inventory.yml
-            echo "      ansible_winrm_transport: \"basic\"" >> ansible/inventory.yml
-            echo "      ansible_winrm_scheme: \"http\"" >> ansible/inventory.yml
-            echo "      ansible_winrm_port: 5985" >> ansible/inventory.yml
-            echo "      ansible_winrm_message_encryption: \"never\"" >> ansible/inventory.yml
-            cat ansible/inventory.yml  # Optional: Print the inventory for debugging
+            mkdir -p ansible
+            cat << EOF > ansible/inventory.yml
+            all:
+              hosts:
+                savard-server:
+                  ansible_host: "${{ steps.get_ip.outputs.public_ip }}"
+                  ansible_user: "adminuser"
+                  ansible_password: "${{ secrets.ANSIBLE_PASSWORD }}"
+                  ansible_connection: "winrm"
+                  ansible_winrm_transport: "basic"
+                  ansible_winrm_scheme: "http"
+                  ansible_winrm_port: 5985
+                  ansible_winrm_message_encryption: "never"
+            EOF
+            cat ansible/inventory.yml  # Debug
           fi
 
-      # Étape 15: Vérification de l'inventaire Ansible
+      # Étape 15: Vérifier le contenu de l'inventaire Ansible
       - name: Vérifier le contenu de l'inventaire Ansible
         run: cat ansible/inventory.yml
 
@@ -139,8 +142,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y python3-pip
           pip3 install --upgrade pip
+          pip3 uninstall -y ansible  # Supprimer toute ancienne version pour éviter les conflits
           pip3 install ansible pywinrm
           ansible-galaxy collection install microsoft.ad community.windows ansible.windows --force --upgrade
+
+      # Vérification après installation
+      - name: Vérifier les collections et modules Windows
+        run: |
           echo "✅ Collections installées :"
           ansible-galaxy collection list
           echo "✅ Vérification des modules Windows :"
@@ -156,14 +164,15 @@ jobs:
             exit 1
           fi
 
-      # Étape 18: Débogage du mot de passe Ansible
-      - name: Debug Ansible Password
+      # Étape 18: Débogage du mot de passe Ansible (⚠️ NE PAS afficher le mot de passe)
+      - name: Vérifier la variable ANSIBLE_PASSWORD
         run: |
-          echo "🔍 Vérification de la variable ANSIBLE_PASSWORD..."
-          echo "ANSIBLE_PASSWORD est défini ? [$(if [[ -z "$ANSIBLE_PASSWORD" ]]; then echo "NON"; else echo "OUI"; fi)]"
-        env:
-          ANSIBLE_PASSWORD: ${{ secrets.ANSIBLE_PASSWORD }}
-
+          if [[ -z "${{ secrets.ANSIBLE_PASSWORD }}" ]]; then
+            echo "❌ ERREUR : La variable ANSIBLE_PASSWORD est vide !"
+            exit 1
+          else
+            echo "✅ La variable ANSIBLE_PASSWORD est bien définie."
+          fi
 
       # Étape X: Appliquer les règles de pare-feu Windows
       - name: Run Ansible Firewall Playbook

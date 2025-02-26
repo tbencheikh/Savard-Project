@@ -1,9 +1,10 @@
----
+--- 
 - name: Configurer le pare-feu Windows et activer WinRM
   hosts: all
+  gather_facts: no
   tasks:
     - name: Ouvrir le port WinRM (5985)
-      ansible.windows.win_firewall_rule:
+      community.windows.win_firewall_rule:
         name: "WinRM HTTP"
         localport: 5985
         action: allow
