@@ -1,0 +1,10 @@
+- name: Configure shared folders
+  hosts: savard-server
+  tasks:
+    - name: Create shared folder
+      win_share:
+        name: "Shared"
+        path: "C:\\Shared"
+        list: true
+        read: "VentesEtMarketing_Group"
+        change: "VentesEtMarketing_Group"

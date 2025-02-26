@@ -1,0 +1,7 @@
+- name: Restart Server
+  win_reboot:
+    msg: "Restarting server to apply changes"
+    connect_timeout: 5
+    reboot_timeout: 600
+    pre_reboot_delay: 0
+    post_reboot_delay: 30

@@ -1,0 +1,14 @@
+- name: Install AD Domain Services
+  win_feature:
+    name: "{{ item }}"
+    include_management_tools: yes
+    state: present
+  loop: "{{ ad_features }}"
+  notify: Restart Server
+
+- name: Promote server to domain controller
+  win_domain_controller:
+    dns_domain_name: "{{ domain_name }}"
+    safe_mode_password: "{{ safe_mode_password }}"
+    domain_netbios_name: "{{ domain_netbios_name }}"
+    state: domain_controller

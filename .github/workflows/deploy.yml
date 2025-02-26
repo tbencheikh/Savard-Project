@@ -1,198 +1,48 @@
-name: Deploy Savard Infrastructure
+name: Deploy Infrastructure
 
 on:
   push:
     branches:
-      - main
+      - dev  # Déclenche le workflow uniquement sur les pushes vers la branche "dev"
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      # Étape 1: Checkout du code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Étape 2: Setup de Terraform
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
-
-      # Étape 3: Connexion à Azure
-      - name: Login to Azure
-        uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          terraform_version: 1.5.0  # Version de Terraform à utiliser
 
-      # Étape 4: Initialisation de Terraform
-      - name: Terraform Init
-        run: terraform init
-        working-directory: ./terraform
-        env:
-          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-
-      # Étape 5: Validation de la configuration Terraform
-      - name: Terraform Validate
-        run: terraform validate
-        working-directory: ./terraform
-
-      # Étape 6: Permissions pour le script d'importation
-      - name: Donne les permissions d'exécution au script import_all_resources.sh
-        run: chmod +x ./terraform/import_all_resources.sh
-
-      # Étape 7: Vérification du mot de passe ADMIN
-      - name: Vérification du mot de passe
-        run: |
-          if [[ -z "${{ secrets.ADMIN_PASSWORD }}" ]]; then
-            echo "❌ ERREUR: ADMIN_PASSWORD est vide !"
-            exit 1
-          else
-            echo "✅ ADMIN_PASSWORD est bien défini."
-          fi
-
-      # Étape 8: Débogage des variables GitHub Secrets
-      - name: Debug GitHub Secret Injection
-        run: |
-          echo "TF_VAR_admin_password=${{ secrets.ADMIN_PASSWORD }}" >> $GITHUB_ENV
-          echo "Vérification du secret injecté..."
-          echo "TF_VAR_admin_password=$TF_VAR_admin_password"
-
-      # Étape 9: Importer les ressources Terraform
-      - name: Run Import Script
-        run: |
-          export TF_VAR_admin_password="${{ secrets.ADMIN_PASSWORD }}"
-          chmod +x ./import_all_resources.sh
-          ./import_all_resources.sh
-        working-directory: ./terraform
-        env:
-          TF_VAR_admin_password: ${{ secrets.ADMIN_PASSWORD }}
-          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-
-      # Étape 10: Afficher les logs de l'importation
-      - name: Afficher les logs Terraform
-        if: always()
-        run: cat ./terraform/import_log.txt
-
-      # Étape 11: Planification de Terraform
-      - name: Terraform Plan
-        run: terraform plan -no-color -input=false -out=tfplan
-        working-directory: ./terraform
-        env:
-          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-          TF_VAR_admin_password: ${{ secrets.ADMIN_PASSWORD }}
-
-      # Étape 12: Application du plan Terraform
-      - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
-        working-directory: ./terraform
-        env:
-          TF_VAR_admin_password: ${{ secrets.ADMIN_PASSWORD }}
-
-      # Étape 13: Récupération de l'IP publique
-      - name: Get Public IP
-        id: get_ip
-        run: |
-          cd terraform
-          PUBLIC_IP=$(terraform output -raw public_ip | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b")
-          if [[ -z "$PUBLIC_IP" ]]; then
-            echo "⚠️ Avertissement : Aucune adresse IP publique trouvée dans la sortie Terraform."
-            echo "::set-output name=public_ip::none"
-          else
-            echo "Public IP: $PUBLIC_IP"
-            echo "::set-output name=public_ip::$PUBLIC_IP"
-          fi
-
-      # Étape 14: Générer l'inventaire Ansible
-      - name: Generate Ansible Inventory (YAML format)
-        id: generate_inventory
-        run: |
-          if [[ "${{ steps.get_ip.outputs.public_ip }}" == "none" ]]; then
-            echo "❌ Erreur : Aucune adresse IP publique disponible pour générer l'inventaire Ansible."
-            exit 1
-          else
-            mkdir -p ansible
-            cat << EOF > ansible/inventory.yml
-            all:
-              hosts:
-                savard-server:
-                  ansible_host: "${{ steps.get_ip.outputs.public_ip }}"
-                  ansible_user: "adminuser"
-                  ansible_password: "${{ secrets.ANSIBLE_PASSWORD }}"
-                  ansible_connection: "winrm"
-                  ansible_winrm_transport: "basic"
-                  ansible_winrm_scheme: "http"
-                  ansible_winrm_port: 5985
-                  ansible_winrm_message_encryption: "never"
-            EOF
-            cat ansible/inventory.yml  # Debug
-          fi
-
-      # Étape 15: Vérifier le contenu de l'inventaire Ansible
-      - name: Vérifier le contenu de l'inventaire Ansible
-        run: cat ansible/inventory.yml
-
-      # Étape 16: Installation des dépendances Ansible
-      - name: Install Ansible and required collections
+      - name: Set up Ansible
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-pip
-          pip3 install --upgrade pip
-          pip3 uninstall -y ansible  # Supprimer toute ancienne version pour éviter les conflits
-          pip3 install ansible pywinrm
-          ansible-galaxy collection install microsoft.ad community.windows ansible.windows --force --upgrade
+          sudo apt-get install -y ansible
 
-      # Vérification après installation
-      - name: Vérifier les collections et modules Windows
+      - name: Run deploy.sh
         run: |
-          echo "✅ Collections installées :"
-          ansible-galaxy collection list
-          echo "✅ Vérification des modules Windows :"
-          ansible-doc -l | grep "win_"
-          echo "✅ Vérification de l'installation Ansible :"
-          ansible --version
+          chmod +x ./scripts/deploy.sh
+          ./scripts/deploy.sh
 
-      # Étape 17: Vérifier si l'inventaire existe
-      - name: Vérifier si l'inventaire existe
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: deploy  # S'exécute uniquement si le job "deploy" échoue
+    if: failure()  # S'exécute uniquement si le job "deploy" échoue
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+
+      - name: Run cleanup.sh
         run: |
-          if [ ! -f ansible/inventory.yml ]; then
-            echo "❌ ERREUR : Le fichier d'inventaire Ansible n'existe pas !"
-            exit 1
-          fi
-
-      # Étape 18: Débogage du mot de passe Ansible (⚠️ NE PAS afficher le mot de passe)
-      - name: Vérifier la variable ANSIBLE_PASSWORD
-        run: |
-          if [[ -z "${{ secrets.ANSIBLE_PASSWORD }}" ]]; then
-            echo "❌ ERREUR : La variable ANSIBLE_PASSWORD est vide !"
-            exit 1
-          else
-            echo "✅ La variable ANSIBLE_PASSWORD est bien définie."
-          fi
-
-      # Étape X: Appliquer les règles de pare-feu Windows
-      - name: Run Ansible Firewall Playbook
-        run: |
-          ansible-playbook -i ansible/inventory.yml ansible/playbook-firewall.yml -vvv
-
-
-      # Étape 19: Test de la connexion WinRM avec Ansible
-      - name: Test Ansible WinRM Connection
-        run: |
-          ansible -i ansible/inventory.yml all -m win_ping -vvv
-
-      # Étape 20: Exécution de la playbook Ansible
-      - name: Run Ansible Playbook
-        run: |
-          cd ansible
-          ansible-playbook -i inventory.yml playbook.yml -vvv
-
-      # Étape 21: Nettoyage en cas d'échec
-      - name: Cleanup on Failure
-        if: failure()
-        run: terraform destroy -auto-approve
-        working-directory: ./terraform
+          chmod +x ./scripts/cleanup.sh
+          ./scripts/cleanup.sh

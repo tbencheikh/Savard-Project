@@ -1,0 +1,13 @@
+- name: Configure GPO
+  hosts: savard-server
+  tasks:
+    - name: Apply password policy
+      win_gpo:
+        name: "Password Policy"
+        state: present
+        policy:
+          password:
+            minimum_password_length: 8
+            password_must_meet_complexity_requirements: true
+            maximum_password_age: 21
+            enforce_password_history: 10
