@@ -60,6 +60,6 @@ jobs:
         run: |
           cd terraform
           terraform destroy -auto-approve -var="subscription_id=${{ secrets.ARM_SUBSCRIPTION_ID }}" \
-          -var="client_id=${{ secrets.ARM_CLIENT_ID }}" \
-          -var="client_secret=${{ secrets.ARM_CLIENT_SECRET }}" \
-          -var="tenant_id=${{ secrets.ARM_TENANT_ID }}"
+                            -var="client_id=${{ secrets.ARM_CLIENT_ID }}" \
+                            -var="client_secret=${{ secrets.ARM_CLIENT_SECRET }}" \
+                            -var="tenant_id=${{ secrets.ARM_TENANT_ID }}"
